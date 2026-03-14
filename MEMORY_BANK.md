@@ -67,13 +67,13 @@
 
 | # | Görev | Durum | Notlar |
 |---|-------|-------|--------|
-| 1 | Provider veya Riverpod paketi ile global state yapısının kurulması | ⬜ Bekliyor | |
-| 2 | TransactionProvider: harcama listesi state yönetimi | ⬜ Bekliyor | |
-| 3 | CategoryProvider: kategori listesi state yönetimi | ⬜ Bekliyor | |
-| 4 | Mock veri ile state akışının doğrulanması | ⬜ Bekliyor | |
-| 5 | ChangeNotifier pattern ile UI'ın reaktif güncellenmesinin test edilmesi | ⬜ Bekliyor | |
+| 1 | Provider veya Riverpod paketi ile global state yapısının kurulması | ✅ Tamamlandı | Provider kullanıldı |
+| 2 | TransactionProvider: harcama listesi state yönetimi | ✅ Tamamlandı | lib/providers/ eklendi |
+| 3 | CategoryProvider: kategori listesi state yönetimi | ✅ Tamamlandı | lib/providers/ eklendi |
+| 4 | Mock veri ile state akışının doğrulanması | ✅ Tamamlandı | home_screen üzerinden test edildi |
+| 5 | ChangeNotifier pattern ile UI'ın reaktif güncellenmesinin test edilmesi | ✅ Tamamlandı | |
 
-**Çıktı:** ⬜ State yönetimi çalışıyor, ekranlar mock veri ile beslenebiliyor.
+**Çıktı:** ✅ State yönetimi çalışıyor, ekranlar mock veri ile beslenebiliyor.
 
 ---
 

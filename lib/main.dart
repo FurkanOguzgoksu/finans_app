@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 // import 'package:firebase_core/firebase_core.dart';
 import 'utils/app_router.dart';
 import 'providers/backup_provider.dart';
+import 'providers/category_provider.dart';
+import 'providers/transaction_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,7 +20,12 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => BackupProvider()),
-        // Diğer provider'lar buraya eklenecek
+        ChangeNotifierProvider(
+          create: (_) => CategoryProvider()..loadCategories(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => TransactionProvider()..loadTransactions(),
+        ),
       ],
       child: const FinansApp(),
     ),
