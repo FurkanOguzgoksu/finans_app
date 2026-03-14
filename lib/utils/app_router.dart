@@ -5,76 +5,87 @@ import '../screens/transactions_screen.dart';
 import '../screens/statistics_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/receipt_scan_screen.dart';
+import '../screens/onboarding_screen.dart';
 import '../screens/backup_settings_screen.dart';
 
 /// Uygulama navigasyon yapılandırması (go_router)
 class AppRouter {
-  static final GoRouter router = GoRouter(
-    initialLocation: '/',
-    routes: [
-      // Ana sayfa - Shell Route ile bottom navigation
-      StatefulShellRoute.indexedStack(
-        builder: (context, state, navigationShell) {
-          return ScaffoldWithNavBar(navigationShell: navigationShell);
-        },
-        branches: [
-          // Ana Sayfa
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/',
-                name: 'home',
-                builder: (context, state) => const HomeScreen(),
-              ),
-            ],
-          ),
-          // İşlemler
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/transactions',
-                name: 'transactions',
-                builder: (context, state) => const TransactionsScreen(),
-              ),
-            ],
-          ),
-          // İstatistikler
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/statistics',
-                name: 'statistics',
-                builder: (context, state) => const StatisticsScreen(),
-              ),
-            ],
-          ),
-          // Ayarlar
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/settings',
-                name: 'settings',
-                builder: (context, state) => const SettingsScreen(),
-              ),
-            ],
-          ),
-        ],
-      ),
-      // Fiş Tarama Ekranı (tam ekran)
-      GoRoute(
-        path: '/scan',
-        name: 'scan',
-        builder: (context, state) => const ReceiptScanScreen(),
-      ),
-      // Yedekleme Ayarları (tam ekran)
-      GoRoute(
-        path: '/backup_settings',
-        name: 'backup_settings',
-        builder: (context, state) => const BackupSettingsScreen(),
-      ),
-    ],
-  );
+  static GoRouter createRouter(bool showOnboarding) {
+    return GoRouter(
+      initialLocation: showOnboarding ? '/onboarding' : '/',
+      routes: [
+        // Tanıtım Ekranı
+        GoRoute(
+          path: '/onboarding',
+          name: 'onboarding',
+          builder: (context, state) => const OnboardingScreen(),
+        ),
+        
+        // Ana sayfa - Shell Route ile bottom navigation
+        StatefulShellRoute.indexedStack(
+          builder: (context, state, navigationShell) {
+            return ScaffoldWithNavBar(navigationShell: navigationShell);
+          },
+          branches: [
+            // Ana Sayfa
+            StatefulShellBranch(
+              routes: [
+                GoRoute(
+                  path: '/',
+                  name: 'home',
+                  builder: (context, state) => const HomeScreen(),
+                ),
+              ],
+            ),
+            // İşlemler
+            StatefulShellBranch(
+              routes: [
+                GoRoute(
+                  path: '/transactions',
+                  name: 'transactions',
+                  builder: (context, state) => const TransactionsScreen(),
+                ),
+              ],
+            ),
+            // İstatistikler
+            StatefulShellBranch(
+              routes: [
+                GoRoute(
+                  path: '/statistics',
+                  name: 'statistics',
+                  builder: (context, state) => const StatisticsScreen(),
+                ),
+              ],
+            ),
+            // Ayarlar
+            StatefulShellBranch(
+              routes: [
+                GoRoute(
+                  path: '/settings',
+                  name: 'settings',
+                  builder: (context, state) => const SettingsScreen(),
+                ),
+              ],
+            ),
+          ],
+        ),
+        // Fiş Tarama Ekranı (tam ekran)
+        GoRoute(
+          path: '/scan',
+          name: 'scan',
+          builder: (context, state) => const ReceiptScanScreen(),
+        ),
+        // Yedekleme Ayarları (tam ekran)
+        GoRoute(
+          path: '/backup_settings',
+          name: 'backup_settings',
+          builder: (context, state) => const BackupSettingsScreen(),
+        ),
+      ],
+    );
+  }
 }
+
 
 /// Bottom Navigation Bar içeren ana scaffold
 class ScaffoldWithNavBar extends StatelessWidget {

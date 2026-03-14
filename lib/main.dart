@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 // import 'package:firebase_core/firebase_core.dart';
 import 'utils/app_router.dart';
 import 'providers/backup_provider.dart';
@@ -8,6 +9,9 @@ import 'providers/transaction_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  final prefs = await SharedPreferences.getInstance();
+  final bool hasSeenOnboarding = prefs.getBool('has_seen_onboarding') ?? false;
 
   // Firebase projesi bağlandığında bu yorum kaldırılacak:
   // try {
@@ -27,19 +31,21 @@ void main() async {
           create: (_) => TransactionProvider()..loadTransactions(),
         ),
       ],
-      child: const FinansApp(),
+      child: FinansApp(showOnboarding: !hasSeenOnboarding),
     ),
   );
 }
 
 class FinansApp extends StatelessWidget {
-  const FinansApp({super.key});
+  final bool showOnboarding;
+  const FinansApp({super.key, required this.showOnboarding});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
       title: 'Finans Takip',
       debugShowCheckedModeBanner: false,
+
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF1565C0), 
@@ -71,7 +77,8 @@ class FinansApp extends StatelessWidget {
         useMaterial3: true,
       ),
       themeMode: ThemeMode.system,
-      routerConfig: AppRouter.router,
+      routerConfig: AppRouter.createRouter(showOnboarding),
     );
   }
 }
+
