@@ -83,13 +83,14 @@
 
 | # | Görev | Durum | Notlar |
 |---|-------|-------|--------|
-| 1 | Aylık gelir-gider özet kartının tasarlanması | ⬜ Bekliyor | |
-| 2 | Son 5 harcamanın listelendiği mini liste oluşturulması | ⬜ Bekliyor | |
-| 3 | Bütçe doluluk oranı progress bar bileşeni | ⬜ Bekliyor | |
-| 4 | BottomNavigationBar ile sekmeler arası navigasyon | ⬜ Bekliyor | Mevcut placeholder |
-| 5 | Responsive tasarım kontrolü | ⬜ Bekliyor | |
+| 1 | UI klasör yapısının oluşturulması (`screens/`, `widgets/`) | ✅ Tamamlandı | summary_card, chart vb. eklendi |
+| 2 | `fl_chart` ile aylık gelir-gider grafiklerinin tasarlanması | ✅ Tamamlandı | DashboardChart eklendi |
+| 3 | Son işlemler (transaction) listesinin kart tasarımları | ✅ Tamamlandı | TransactionListItem eklendi |
+| 4 | "Transaction Ekle" Floating Action Button (FAB) entegrasyonu | ✅ Tamamlandı | HomeScreen'e test butonu olarak eklendi |
+| 5 | Responsive düzen ayarlamaları (mobil vs geniş ekran) | ✅ Tamamlandı | ResponsiveLayout eklendi |
+| 6 | Onboarding (Tanıtım) Ekranı Geliştirme | ✅ Tamamlandı | SharedPreferences + PageView |
 
-**Çıktı:** ⬜ Dashboard ekranı gerçek verilerle çalışıyor.
+**Çıktı:** ✅ Dashboard ve Tanıtım ekranları tamamlandı. Uygulama şık bir onboarding ile açılıyor.
 
 > 🎥 **NOT: 16 Mart – 29 Mart 2026 tarihleri arasında video çekimi yapılacaktır.**
 

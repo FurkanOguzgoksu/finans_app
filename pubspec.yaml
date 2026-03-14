@@ -44,7 +44,7 @@ dependencies:
   image_picker: ^1.1.2
 
   # Grafikler & Veri Görselleştirme
-  fl_chart: ^0.70.2
+  fl_chart: ^1.2.0
 
   # Navigasyon
   go_router: ^14.8.1
@@ -67,6 +67,9 @@ dev_dependencies:
 
   flutter_lints: ^5.0.0
   sqflite_common_ffi: ^2.3.6
+
+dependency_overrides:
+  vector_math: ^2.2.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
