@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 /// Ayarlar Ekranı - Uygulama ayarlarını yönetir
 class SettingsScreen extends StatelessWidget {
@@ -11,11 +12,20 @@ class SettingsScreen extends StatelessWidget {
         title: const Text('Ayarlar'),
         centerTitle: true,
       ),
-      body: const Center(
-        child: Text(
-          'Ayarlar\n(İleride uygulama ayarları burada gösterilecek)',
-          textAlign: TextAlign.center,
-        ),
+      body: ListView(
+        children: [
+          ListTile(
+            leading: const Icon(Icons.backup),
+            title: const Text('Yedekleme Ayarları'),
+            subtitle: const Text('JSON veya Firebase ile yedek alın'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              context.push('/backup_settings');
+            },
+          ),
+          const Divider(),
+          // Diğer ayarlar eklenebilir
+        ],
       ),
     );
   }

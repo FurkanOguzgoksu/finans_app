@@ -5,6 +5,7 @@ import '../screens/transactions_screen.dart';
 import '../screens/statistics_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/receipt_scan_screen.dart';
+import '../screens/backup_settings_screen.dart';
 
 /// Uygulama navigasyon yapılandırması (go_router)
 class AppRouter {
@@ -64,6 +65,12 @@ class AppRouter {
         path: '/scan',
         name: 'scan',
         builder: (context, state) => const ReceiptScanScreen(),
+      ),
+      // Yedekleme Ayarları (tam ekran)
+      GoRoute(
+        path: '/backup_settings',
+        name: 'backup_settings',
+        builder: (context, state) => const BackupSettingsScreen(),
       ),
     ],
   );
