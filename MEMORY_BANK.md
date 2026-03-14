@@ -17,7 +17,7 @@
 
 ## 📅 Haftalık Görevler
 
-### Hafta 1 — 9 Şubat (Planlama ve Kurulum)
+### Hafta 1 —> 9 Şubat – 15 Şubat (Planlama ve Kurulum)
 
 | # | Görev | Durum | Notlar |
 |---|-------|-------|--------|
@@ -27,6 +27,20 @@
 | 4 | Proje klasör yapısının oluşturulması | ✅ Tamamlandı | models/, repositories/, services/, screens/, widgets/, utils/ oluşturuldu |
 
 **Çıktı:** ✅ Ortam hazır, proje repository'si oluşturuldu.
+
+---
+
+### Hafta 2 —> 16 Şubat – 22 Şubat (Uygulama Mimarisi ve Veri Modelleri)
+
+| # | Görev | Durum | Notlar |
+|---|-------|-------|--------|
+| 1 | Transaction, Category ve Receipt model sınıflarının tanımlanması | ✅ Tamamlandı | toMap/fromMap/copyWith metotları ile birlikte |
+| 2 | SQLite tablo şemalarının (CREATE TABLE) tasarlanması | ✅ Tamamlandı | categories, transactions, receipts tabloları + varsayılan kategoriler |
+| 3 | Repository pattern arayüzlerinin (abstract class) belirlenmesi | ✅ Tamamlandı | TransactionRepository, CategoryRepository, ReceiptRepository |
+| 4 | Uygulama navigasyon yapısının go_router ile oluşturulması | ✅ Tamamlandı | StatefulShellRoute + 4 tab (Ana Sayfa, İşlemler, İstatistik, Ayarlar) + Fiş Tarama |
+| 5 | Teknik mimari dokümanının hazırlanması | ✅ Tamamlandı | ARCHITECTURE.md oluşturuldu |
+
+**Çıktı:** ✅ Model sınıfları yazıldı, mimari doküman hazır.
 
 <!--
 Durum Emojileri:
