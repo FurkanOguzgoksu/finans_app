@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import '../../../lib/models/transaction.dart';
+import 'package:finans_app/models/transaction.dart';
 
 void main() {
   group('Transaction Model & Data Testleri', () {
@@ -16,7 +16,7 @@ void main() {
       );
 
       final map = t.toMap();
-      
+
       expect(map['id'], 1);
       expect(map['title'], 'Market');
       expect(map['amount'], 250.5);
@@ -44,4 +44,3 @@ void main() {
     });
   });
 }
-
