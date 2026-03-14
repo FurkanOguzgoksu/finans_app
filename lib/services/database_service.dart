@@ -1,7 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
-/// Veritabanı servisi - SQLite veritabanı yönetimini sağlar
+/// Veritabanı servisi (DatabaseHelper) - SQLite veritabanı yönetimini sağlar
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
   static Database? _database;
@@ -23,10 +23,16 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 1, // Migration yönetimi için bu sürüm artırılacak
+      onConfigure: _onConfigure,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
+  }
+
+  /// Veritabanı bağlantısı açıldığında çalışır (Foreign Key desteği için)
+  Future<void> _onConfigure(Database db) async {
+    await db.execute('PRAGMA foreign_keys = ON');
   }
 
   /// Tablo şemalarını oluşturur
@@ -75,26 +81,24 @@ class DatabaseService {
     await _insertDefaultCategories(db);
   }
 
-  /// Veritabanı sürüm yükseltmelerinde çalışır
+  /// Veritabanı sürüm yükseltmelerinde çalışır (Migration Management)
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    // İleride şema değişikliklerinde kullanılacak
+    // Örnek: if (oldVersion < 2) { await db.execute('ALTER TABLE ...'); }
   }
 
   /// Varsayılan gelir/gider kategorilerini ekler
   Future<void> _insertDefaultCategories(Database db) async {
     final defaultCategories = [
       // Gider kategorileri
-      {'name': 'Yiyecek & İçecek', 'type': 'gider', 'icon': 'restaurant', 'color': '#FF5722'},
+      {'name': 'Market & Mutfak', 'type': 'gider', 'icon': 'shopping_cart', 'color': '#FF9800'},
+      {'name': 'Faturalar', 'type': 'gider', 'icon': 'receipt_long', 'color': '#F44336'},
       {'name': 'Ulaşım', 'type': 'gider', 'icon': 'directions_bus', 'color': '#2196F3'},
-      {'name': 'Alışveriş', 'type': 'gider', 'icon': 'shopping_cart', 'color': '#9C27B0'},
-      {'name': 'Faturalar', 'type': 'gider', 'icon': 'receipt_long', 'color': '#FF9800'},
-      {'name': 'Sağlık', 'type': 'gider', 'icon': 'local_hospital', 'color': '#F44336'},
-      {'name': 'Eğitim', 'type': 'gider', 'icon': 'school', 'color': '#3F51B5'},
-      {'name': 'Eğlence', 'type': 'gider', 'icon': 'movie', 'color': '#E91E63'},
+      {'name': 'Yemek & Kafe', 'type': 'gider', 'icon': 'restaurant', 'color': '#E91E63'},
+      {'name': 'Sağlık', 'type': 'gider', 'icon': 'local_hospital', 'color': '#9C27B0'},
       {'name': 'Diğer Gider', 'type': 'gider', 'icon': 'more_horiz', 'color': '#607D8B'},
       // Gelir kategorileri
       {'name': 'Maaş', 'type': 'gelir', 'icon': 'account_balance_wallet', 'color': '#4CAF50'},
-      {'name': 'Freelance', 'type': 'gelir', 'icon': 'work', 'color': '#00BCD4'},
+      {'name': 'Freelance / Ek Gelir', 'type': 'gelir', 'icon': 'work', 'color': '#00BCD4'},
       {'name': 'Yatırım', 'type': 'gelir', 'icon': 'trending_up', 'color': '#8BC34A'},
       {'name': 'Diğer Gelir', 'type': 'gelir', 'icon': 'attach_money', 'color': '#009688'},
     ];
@@ -111,3 +115,4 @@ class DatabaseService {
     _database = null;
   }
 }
+
