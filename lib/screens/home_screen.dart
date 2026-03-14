@@ -3,119 +3,223 @@ import 'package:provider/provider.dart';
 import '../providers/transaction_provider.dart';
 import '../models/transaction.dart' as models;
 
-/// Ana Ekran - Uygulama açılışında gösterilen dashboard
+// UI Bileşenleri (Widgets)
+import '../widgets/summary_card.dart';
+import '../widgets/dashboard_chart.dart';
+import '../widgets/transaction_list_item.dart';
+import '../utils/responsive_layout.dart';
+
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Ana Sayfa'),
-        centerTitle: true,
-      ),
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: Consumer<TransactionProvider>(
         builder: (context, provider, child) {
           if (provider.isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              // Bakiye Kartı (Geçici)
-              Card(
-                color: Theme.of(context).colorScheme.primaryContainer,
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    children: [
-                      const Text('Toplam Bakiye', style: TextStyle(fontSize: 18)),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${provider.balance.toStringAsFixed(2)} ₺',
-                        style: const TextStyle(
-                            fontSize: 32, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          Column(
-                            children: [
-                              const Text('Gelir'),
-                              Text(
-                                '${provider.totalIncome.toStringAsFixed(2)} ₺',
-                                style: const TextStyle(color: Colors.green),
-                              ),
-                            ],
-                          ),
-                          Column(
-                            children: [
-                              const Text('Gider'),
-                              Text(
-                                '${provider.totalExpense.toStringAsFixed(2)} ₺',
-                                style: const TextStyle(color: Colors.red),
-                              ),
-                            ],
-                          ),
-                        ],
-                      )
-                    ],
-                  ),
-                ),
-              ),
+          final transactions = provider.transactions;
 
-              const SizedBox(height: 32),
-
-              // Mock Veri Ekleme Butonu
-              ElevatedButton.icon(
-                icon: const Icon(Icons.add),
-                label: const Text('Test İşlemi Ekle (Mock)'),
-                onPressed: () {
-                  // Rastgele gelir veya gider oluşturarak test ediyoruz
-                  final isIncome = DateTime.now().second % 2 == 0;
-                  
-                  final mockTransaction = models.Transaction(
-                    title: isIncome ? 'Test Geliri' : 'Test Harcaması',
-                    amount: 250.0,
-                    type: isIncome ? 'gelir' : 'gider',
-                    categoryId: isIncome ? 1 : 2, // 1: Maaş, 2: Market vs. (Seed verisinde var)
-                    date: DateTime.now(),
-                  );
-
-                  // Veritabanına kaydet ve State'i güncelle
-                  provider.addTransaction(mockTransaction);
-                },
-              ),
-
-              const SizedBox(height: 32),
-              
-              Text(
-                'Son İşlemler (${provider.transactions.length})',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-
-              const SizedBox(height: 8),
-
-              // İşlemlerin Listesi
-              ...provider.transactions.map((tx) => ListTile(
-                    leading: Icon(
-                        tx.type == 'gelir' ? Icons.arrow_upward : Icons.arrow_downward,
-                        color: tx.type == 'gelir' ? Colors.green : Colors.red),
-                    title: Text(tx.title),
-                    subtitle: Text(tx.date.toString().substring(0, 10)),
-                    trailing: Text('${tx.amount} ₺'),
-                    onLongPress: () {
-                      if (tx.id != null) {
-                        provider.deleteTransaction(tx.id!);
-                      }
-                    },
-                  )).toList(),
-            ],
+          return ResponsiveLayout(
+            mobileScaffold: _buildMobileLayout(context, provider, transactions),
+            tabletScaffold: _buildTabletLayout(context, provider, transactions),
           );
         },
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          _showMockAddDialog(context);
+        },
+        icon: const Icon(Icons.add),
+        label: const Text('İşlem Ekle'),
+      ),
+    );
+  }
+
+  /// Telefon ve Dikey Ekranlar İçin Yapı
+  Widget _buildMobileLayout(
+      BuildContext context, TransactionProvider provider, List<models.Transaction> transactions) {
+    return CustomScrollView(
+      slivers: [
+        _buildSliverAppBar(context),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 8),
+                SummaryCard(
+                  totalIncome: provider.totalIncome,
+                  totalExpense: provider.totalExpense,
+                  balance: provider.balance,
+                ),
+                const SizedBox(height: 24),
+                _buildSectionTitle(context, 'Aylık Analiz'),
+                const DashboardChart(),
+                const SizedBox(height: 24),
+                _buildSectionTitle(context, 'Son İşlemler'),
+                const SizedBox(height: 12),
+              ],
+            ),
+          ),
+        ),
+        _buildTransactionsSliverList(context, provider, transactions),
+        const SliverToBoxAdapter(child: SizedBox(height: 80)),
+      ],
+    );
+  }
+
+  /// Tablet ve Web/Geniş Ekranlar İçin Yapı
+  Widget _buildTabletLayout(
+      BuildContext context, TransactionProvider provider, List<models.Transaction> transactions) {
+    return CustomScrollView(
+      slivers: [
+        _buildSliverAppBar(context),
+        SliverPadding(
+          padding: const EdgeInsets.all(16.0),
+          sliver: SliverToBoxAdapter(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Sol Taraf: Kart ve Grafik
+                Expanded(
+                  flex: 1,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SummaryCard(
+                        totalIncome: provider.totalIncome,
+                        totalExpense: provider.totalExpense,
+                        balance: provider.balance,
+                      ),
+                      const SizedBox(height: 24),
+                      _buildSectionTitle(context, 'Aylık Analiz'),
+                      const DashboardChart(),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 32),
+                // Sağ Taraf: Geçmiş İşlemler Listesi
+                Expanded(
+                  flex: 1,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildSectionTitle(context, 'Son İşlemler'),
+                      const SizedBox(height: 16),
+                      if (transactions.isEmpty)
+                        const Center(child: Text("Henüz işlem yok."))
+                      else
+                        ListView.builder(
+                          physics: const NeverScrollableScrollPhysics(),
+                          shrinkWrap: true,
+                          itemCount: transactions.length,
+                          itemBuilder: (context, index) {
+                            final tx = transactions[index];
+                            return TransactionListItem(
+                              transaction: tx,
+                              onDelete: () {
+                                if (tx.id != null) provider.deleteTransaction(tx.id!);
+                              },
+                            );
+                          },
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SliverToBoxAdapter(child: SizedBox(height: 80)),
+      ],
+    );
+  }
+
+  SliverAppBar _buildSliverAppBar(BuildContext context) {
+    return SliverAppBar(
+      expandedHeight: 80.0,
+      floating: true,
+      pinned: true,
+      flexibleSpace: FlexibleSpaceBar(
+        title: Text(
+          'Finans Asistanı',
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(BuildContext context, String title) {
+    return Text(
+      title,
+      style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+    );
+  }
+
+  Widget _buildTransactionsSliverList(
+      BuildContext context, TransactionProvider provider, List<models.Transaction> transactions) {
+    if (transactions.isEmpty) {
+      return SliverToBoxAdapter(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32.0),
+            child: Text(
+              'Henüz işlem bulunmuyor.\nSağ alt köşeden başlayabilirsiniz.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            final tx = transactions[index];
+            return TransactionListItem(
+              transaction: tx,
+              onDelete: () {
+                if (tx.id != null) provider.deleteTransaction(tx.id!);
+              },
+            );
+          },
+          childCount: transactions.length,
+        ),
+      ),
+    );
+  }
+
+  // Hızlı test için pop-up (mock ekle) mekanizması
+  void _showMockAddDialog(BuildContext context) {
+    final provider = Provider.of<TransactionProvider>(context, listen: false);
+    final isIncome = DateTime.now().second % 2 == 0;
+    
+    final mockTx = models.Transaction(
+      title: isIncome ? 'Test Geliri' : 'Fatura/Market (Test)',
+      amount: 450.0,
+      type: isIncome ? 'gelir' : 'gider',
+      categoryId: isIncome ? 1 : 2,
+      date: DateTime.now(),
+    );
+    provider.addTransaction(mockTx);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+       const SnackBar(content: Text('Test İşlemi Eklendi!')),
     );
   }
 }
+
