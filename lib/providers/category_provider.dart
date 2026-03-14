@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../models/category.dart';
-import '../services/category_dao.dart';
+import 'package:finans_app/models/category.dart';
+import 'package:finans_app/services/category_dao.dart';
 
 class CategoryProvider with ChangeNotifier {
   final CategoryDao _categoryDao = CategoryDao();

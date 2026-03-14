@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../models/transaction.dart' as models;
-import '../services/transaction_dao.dart';
+import 'package:finans_app/models/transaction.dart' as models;
+import 'package:finans_app/services/transaction_dao.dart';
 
 class TransactionProvider with ChangeNotifier {
   final TransactionDao _transactionDao = TransactionDao();
@@ -25,12 +25,11 @@ class TransactionProvider with ChangeNotifier {
     try {
       // 1. İşlem Listesini Çek
       _transactions = await _transactionDao.getAll();
-      
+
       // 2. Toplam Gelir ve Gideri Çek
       _totalIncome = await _transactionDao.getTotalIncome();
       _totalExpense = await _transactionDao.getTotalExpense();
       _balance = _totalIncome - _totalExpense;
-
     } catch (e) {
       debugPrint("İşlemler yüklenirken hata: $e");
     } finally {

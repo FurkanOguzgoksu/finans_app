@@ -1,6 +1,6 @@
-import '../models/transaction.dart';
-import '../repositories/transaction_repository.dart';
-import 'database_service.dart';
+import 'package:finans_app/models/transaction.dart';
+import 'package:finans_app/repositories/transaction_repository.dart';
+import 'package:finans_app/services/database_service.dart';
 
 /// Transaction Data Access Object - SQLite üzerinden İşlem CRUD operasyonları
 class TransactionDao implements TransactionRepository {
@@ -77,7 +77,7 @@ class TransactionDao implements TransactionRepository {
   @override
   Future<int> update(Transaction transaction) async {
     if (transaction.id == null) return 0;
-    
+
     final db = await _dbService.database;
     return await db.update(
       _tableName,
@@ -90,11 +90,7 @@ class TransactionDao implements TransactionRepository {
   @override
   Future<int> delete(int id) async {
     final db = await _dbService.database;
-    return await db.delete(
-      _tableName,
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    return await db.delete(_tableName, where: 'id = ?', whereArgs: [id]);
   }
 
   @override
@@ -106,24 +102,28 @@ class TransactionDao implements TransactionRepository {
   Future<double> getTotalExpense({DateTime? start, DateTime? end}) async {
     return _getTotalAmountByType('gider', start: start, end: end);
   }
-  
+
   /// Yardımcı metot: Belirli tür ve tarih aralığına göre toplam tutarı hesaplar
-  Future<double> _getTotalAmountByType(String type, {DateTime? start, DateTime? end}) async {
+  Future<double> _getTotalAmountByType(
+    String type, {
+    DateTime? start,
+    DateTime? end,
+  }) async {
     final db = await _dbService.database;
-    
+
     String whereClause = 'type = ?';
     List<dynamic> whereArgs = [type];
-    
+
     if (start != null && end != null) {
       whereClause += ' AND date >= ? AND date <= ?';
       whereArgs.addAll([start.toIso8601String(), end.toIso8601String()]);
     }
-    
+
     final result = await db.rawQuery(
       'SELECT SUM(amount) as total FROM $_tableName WHERE $whereClause',
       whereArgs,
     );
-    
+
     if (result.isNotEmpty && result.first['total'] != null) {
       return (result.first['total'] as num).toDouble();
     }

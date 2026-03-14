@@ -1,4 +1,4 @@
-import '../models/category.dart';
+import "package:finans_app/models/category.dart";
 
 /// Category Repository - Kategori CRUD operasyonları için abstract sınıf
 abstract class CategoryRepository {

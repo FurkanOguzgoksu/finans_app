@@ -1,6 +1,6 @@
-import '../models/receipt.dart';
-import '../repositories/receipt_repository.dart';
-import 'database_service.dart';
+import 'package:finans_app/models/receipt.dart';
+import 'package:finans_app/repositories/receipt_repository.dart';
+import 'package:finans_app/services/database_service.dart';
 
 /// Receipt Data Access Object - SQLite üzerinden Fiş/Fatura CRUD operasyonları
 class ReceiptDao implements ReceiptRepository {
@@ -66,10 +66,6 @@ class ReceiptDao implements ReceiptRepository {
   @override
   Future<int> delete(int id) async {
     final db = await _dbService.database;
-    return await db.delete(
-      _tableName,
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    return await db.delete(_tableName, where: 'id = ?', whereArgs: [id]);
   }
 }

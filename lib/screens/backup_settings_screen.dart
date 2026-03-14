@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/backup_provider.dart';
+import 'package:finans_app/providers/backup_provider.dart';
 
 class BackupSettingsScreen extends StatelessWidget {
   const BackupSettingsScreen({super.key});
@@ -8,9 +8,7 @@ class BackupSettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Yedekleme Ayarları'),
-      ),
+      appBar: AppBar(title: const Text('Yedekleme Ayarları')),
       body: Consumer<BackupProvider>(
         builder: (context, provider, child) {
           return Padding(
@@ -23,7 +21,7 @@ class BackupSettingsScreen extends StatelessWidget {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Yöntem Seçimi
                 RadioListTile<BackupType>(
                   title: const Text('Cihaza Kaydet (JSON)'),
@@ -43,16 +41,16 @@ class BackupSettingsScreen extends StatelessWidget {
                     if (value != null) provider.setBackupType(value);
                   },
                 ),
-                
+
                 const SizedBox(height: 32),
-                
+
                 // Mesaj Alanı
                 if (provider.lastMessage != null)
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: provider.lastMessage!.contains('başarı') 
-                          ? Colors.green.withAlpha(50) 
+                      color: provider.lastMessage!.contains('başarı')
+                          ? Colors.green.withAlpha(50)
                           : Colors.red.withAlpha(50),
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -60,15 +58,15 @@ class BackupSettingsScreen extends StatelessWidget {
                       provider.lastMessage!,
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: provider.lastMessage!.contains('başarı') 
-                            ? Colors.green.shade800 
+                        color: provider.lastMessage!.contains('başarı')
+                            ? Colors.green.shade800
                             : Colors.red.shade800,
                       ),
                     ),
                   ),
 
                 const SizedBox(height: 32),
-                
+
                 // Aksiyon Butonları
                 if (provider.isLoading)
                   const Center(child: CircularProgressIndicator())

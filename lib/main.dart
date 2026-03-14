@@ -48,7 +48,7 @@ class FinansApp extends StatelessWidget {
 
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF1565C0), 
+          seedColor: const Color(0xFF1565C0),
           brightness: Brightness.light,
           surface: Colors.white,
         ),
@@ -63,11 +63,13 @@ class FinansApp extends StatelessWidget {
       ),
       darkTheme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF1565C0), 
+          seedColor: const Color(0xFF1565C0),
           brightness: Brightness.dark,
           surface: const Color(0xFF1E1E1E),
         ),
-        scaffoldBackgroundColor: const Color(0xFF121212), // Koyu mod arka planı (neredeyse siyah)
+        scaffoldBackgroundColor: const Color(
+          0xFF121212,
+        ), // Koyu mod arka planı (neredeyse siyah)
         appBarTheme: const AppBarTheme(
           centerTitle: true,
           elevation: 0,
@@ -81,4 +83,3 @@ class FinansApp extends StatelessWidget {
     );
   }
 }
-

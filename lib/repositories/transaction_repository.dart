@@ -1,4 +1,4 @@
-import '../models/transaction.dart';
+import "package:finans_app/models/transaction.dart";
 
 /// Transaction Repository - İşlem CRUD operasyonları için abstract sınıf
 abstract class TransactionRepository {

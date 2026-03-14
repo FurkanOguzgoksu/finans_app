@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/transaction_provider.dart';
-import '../models/transaction.dart' as models;
+import 'package:finans_app/providers/transaction_provider.dart';
+import 'package:finans_app/models/transaction.dart' as models;
 
 // UI Bileşenleri (Widgets)
-import '../widgets/summary_card.dart';
-import '../widgets/dashboard_chart.dart';
-import '../widgets/transaction_list_item.dart';
-import '../utils/responsive_layout.dart';
+import 'package:finans_app/widgets/summary_card.dart';
+import 'package:finans_app/widgets/dashboard_chart.dart';
+import 'package:finans_app/widgets/transaction_list_item.dart';
+import 'package:finans_app/utils/responsive_layout.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -42,7 +42,10 @@ class HomeScreen extends StatelessWidget {
 
   /// Telefon ve Dikey Ekranlar İçin Yapı
   Widget _buildMobileLayout(
-      BuildContext context, TransactionProvider provider, List<models.Transaction> transactions) {
+    BuildContext context,
+    TransactionProvider provider,
+    List<models.Transaction> transactions,
+  ) {
     return CustomScrollView(
       slivers: [
         _buildSliverAppBar(context),
@@ -76,7 +79,10 @@ class HomeScreen extends StatelessWidget {
 
   /// Tablet ve Web/Geniş Ekranlar İçin Yapı
   Widget _buildTabletLayout(
-      BuildContext context, TransactionProvider provider, List<models.Transaction> transactions) {
+    BuildContext context,
+    TransactionProvider provider,
+    List<models.Transaction> transactions,
+  ) {
     return CustomScrollView(
       slivers: [
         _buildSliverAppBar(context),
@@ -124,7 +130,8 @@ class HomeScreen extends StatelessWidget {
                             return TransactionListItem(
                               transaction: tx,
                               onDelete: () {
-                                if (tx.id != null) provider.deleteTransaction(tx.id!);
+                                if (tx.id != null)
+                                  provider.deleteTransaction(tx.id!);
                               },
                             );
                           },
@@ -162,12 +169,17 @@ class HomeScreen extends StatelessWidget {
   Widget _buildSectionTitle(BuildContext context, String title) {
     return Text(
       title,
-      style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+      style: Theme.of(
+        context,
+      ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
     );
   }
 
   Widget _buildTransactionsSliverList(
-      BuildContext context, TransactionProvider provider, List<models.Transaction> transactions) {
+    BuildContext context,
+    TransactionProvider provider,
+    List<models.Transaction> transactions,
+  ) {
     if (transactions.isEmpty) {
       return SliverToBoxAdapter(
         child: Center(
@@ -177,7 +189,8 @@ class HomeScreen extends StatelessWidget {
               'Henüz işlem bulunmuyor.\nSağ alt köşeden başlayabilirsiniz.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+              ),
             ),
           ),
         ),
@@ -187,18 +200,15 @@ class HomeScreen extends StatelessWidget {
     return SliverPadding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       sliver: SliverList(
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
-            final tx = transactions[index];
-            return TransactionListItem(
-              transaction: tx,
-              onDelete: () {
-                if (tx.id != null) provider.deleteTransaction(tx.id!);
-              },
-            );
-          },
-          childCount: transactions.length,
-        ),
+        delegate: SliverChildBuilderDelegate((context, index) {
+          final tx = transactions[index];
+          return TransactionListItem(
+            transaction: tx,
+            onDelete: () {
+              if (tx.id != null) provider.deleteTransaction(tx.id!);
+            },
+          );
+        }, childCount: transactions.length),
       ),
     );
   }
@@ -207,7 +217,7 @@ class HomeScreen extends StatelessWidget {
   void _showMockAddDialog(BuildContext context) {
     final provider = Provider.of<TransactionProvider>(context, listen: false);
     final isIncome = DateTime.now().second % 2 == 0;
-    
+
     final mockTx = models.Transaction(
       title: isIncome ? 'Test Geliri' : 'Fatura/Market (Test)',
       amount: 450.0,
@@ -217,9 +227,8 @@ class HomeScreen extends StatelessWidget {
     );
     provider.addTransaction(mockTx);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-       const SnackBar(content: Text('Test İşlemi Eklendi!')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Test İşlemi Eklendi!')));
   }
 }
-

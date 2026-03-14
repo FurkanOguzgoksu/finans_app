@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../models/transaction.dart' as models;
+import 'package:finans_app/models/transaction.dart';
 
 class TransactionListItem extends StatelessWidget {
-  final models.Transaction transaction;
+  final Transaction transaction;
   final VoidCallback? onDelete;
 
   const TransactionListItem({
@@ -16,7 +16,7 @@ class TransactionListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isIncome = transaction.type == 'gelir';
-    
+
     // Tarihi formatla (Örn: 10 Mar 2026)
     final dateFormat = DateFormat('dd MMM yyyy');
     final formattedDate = dateFormat.format(transaction.date);
@@ -39,13 +39,15 @@ class TransactionListItem extends StatelessWidget {
         leading: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: isIncome 
-                ? Colors.green.withOpacity(0.1) 
+            color: isIncome
+                ? Colors.green.withOpacity(0.1)
                 : Colors.red.withOpacity(0.1),
             shape: BoxShape.circle,
           ),
           child: Icon(
-            isIncome ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
+            isIncome
+                ? Icons.arrow_downward_rounded
+                : Icons.arrow_upward_rounded,
             color: isIncome ? Colors.green : Colors.red,
           ),
         ),

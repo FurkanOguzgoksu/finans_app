@@ -1,6 +1,6 @@
-import '../models/category.dart';
-import '../repositories/category_repository.dart';
-import 'database_service.dart';
+import 'package:finans_app/models/category.dart';
+import 'package:finans_app/repositories/category_repository.dart';
+import 'package:finans_app/services/database_service.dart';
 
 /// Category Data Access Object - SQLite üzerinden Kategori CRUD operasyonları
 class CategoryDao implements CategoryRepository {
@@ -68,10 +68,6 @@ class CategoryDao implements CategoryRepository {
     final db = await _dbService.database;
     // Not: Foreign key constraint nedeniyle, bu kategoriye ait işlemler cascade delete ile silinebilir (ON DELETE CASCADE yapısı)
     // Veya kullanıcı uyarılmalı
-    return await db.delete(
-      _tableName,
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    return await db.delete(_tableName, where: 'id = ?', whereArgs: [id]);
   }
 }

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../screens/home_screen.dart';
-import '../screens/transactions_screen.dart';
-import '../screens/statistics_screen.dart';
-import '../screens/settings_screen.dart';
-import '../screens/receipt_scan_screen.dart';
-import '../screens/onboarding_screen.dart';
-import '../screens/backup_settings_screen.dart';
+import 'package:finans_app/screens/home_screen.dart';
+import 'package:finans_app/screens/transactions_screen.dart';
+import 'package:finans_app/screens/statistics_screen.dart';
+import 'package:finans_app/screens/settings_screen.dart';
+import 'package:finans_app/screens/receipt_scan_screen.dart';
+import 'package:finans_app/screens/onboarding_screen.dart';
+import 'package:finans_app/screens/backup_settings_screen.dart';
 
 /// Uygulama navigasyon yapılandırması (go_router)
 class AppRouter {
@@ -20,7 +20,7 @@ class AppRouter {
           name: 'onboarding',
           builder: (context, state) => const OnboardingScreen(),
         ),
-        
+
         // Ana sayfa - Shell Route ile bottom navigation
         StatefulShellRoute.indexedStack(
           builder: (context, state, navigationShell) {
@@ -85,7 +85,6 @@ class AppRouter {
     );
   }
 }
-
 
 /// Bottom Navigation Bar içeren ana scaffold
 class ScaffoldWithNavBar extends StatelessWidget {

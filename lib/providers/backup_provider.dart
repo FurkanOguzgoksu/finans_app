@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../services/backup/backup_service.dart';
-import '../services/backup/json_backup_service.dart';
-import '../services/backup/firebase_backup_service.dart';
+import 'package:finans_app/services/backup/backup_service.dart';
+import 'package:finans_app/services/backup/json_backup_service.dart';
+import 'package:finans_app/services/backup/firebase_backup_service.dart';
 
 enum BackupType { json, firebase }
 
@@ -36,7 +36,7 @@ class BackupProvider with ChangeNotifier {
     try {
       final service = _getService();
       final success = await service.exportData();
-      
+
       if (success) {
         _lastMessage = 'Yedekleme başarıyla tamamlandı!';
       } else {
@@ -58,7 +58,7 @@ class BackupProvider with ChangeNotifier {
     try {
       final service = _getService();
       final success = await service.importData();
-      
+
       if (success) {
         _lastMessage = 'Veriler başarıyla geri yüklendi!';
       } else {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
-import '../providers/transaction_provider.dart';
+import 'package:finans_app/providers/transaction_provider.dart';
 
 class DashboardChart extends StatelessWidget {
   const DashboardChart({super.key});
@@ -37,7 +37,8 @@ class DashboardChart extends StatelessWidget {
                 PieChartSectionData(
                   color: Colors.greenAccent,
                   value: totalIncome,
-                  title: '${(totalIncome / (totalIncome + totalExpense) * 100).toStringAsFixed(1)}%',
+                  title:
+                      '${(totalIncome / (totalIncome + totalExpense) * 100).toStringAsFixed(1)}%',
                   radius: 50,
                   titleStyle: const TextStyle(
                     fontSize: 14,
@@ -48,7 +49,8 @@ class DashboardChart extends StatelessWidget {
                 PieChartSectionData(
                   color: Colors.redAccent,
                   value: totalExpense,
-                  title: '${(totalExpense / (totalIncome + totalExpense) * 100).toStringAsFixed(1)}%',
+                  title:
+                      '${(totalExpense / (totalIncome + totalExpense) * 100).toStringAsFixed(1)}%',
                   radius: 40,
                   titleStyle: const TextStyle(
                     fontSize: 14,

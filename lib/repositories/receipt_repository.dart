@@ -1,4 +1,4 @@
-import '../models/receipt.dart';
+import "package:finans_app/models/receipt.dart";
 
 /// Receipt Repository - Fiş/Fatura CRUD operasyonları için abstract sınıf
 abstract class ReceiptRepository {
