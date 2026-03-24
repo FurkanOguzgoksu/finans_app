@@ -8,6 +8,9 @@ import 'package:finans_app/widgets/summary_card.dart';
 import 'package:finans_app/widgets/dashboard_chart.dart';
 import 'package:finans_app/widgets/transaction_list_item.dart';
 import 'package:finans_app/utils/responsive_layout.dart';
+import 'package:finans_app/widgets/transaction_options_sheet.dart';
+
+import 'package:finans_app/widgets/transaction_detail_dialog.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -32,9 +35,14 @@ class HomeScreen extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          _showMockAddDialog(context);
+          showModalBottomSheet(
+            context: context,
+            backgroundColor: Colors.transparent,
+            builder: (ctx) => const TransactionOptionsSheet(),
+          );
         },
         icon: const Icon(Icons.add),
+
         label: const Text('İşlem Ekle'),
       ),
     );
@@ -129,9 +137,16 @@ class HomeScreen extends StatelessWidget {
                             final tx = transactions[index];
                             return TransactionListItem(
                               transaction: tx,
+                              onTap: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (ctx) => TransactionDetailDialog(transaction: tx),
+                                );
+                              },
                               onDelete: () {
-                                if (tx.id != null)
+                                if (tx.id != null) {
                                   provider.deleteTransaction(tx.id!);
+                                }
                               },
                             );
                           },
@@ -147,6 +162,9 @@ class HomeScreen extends StatelessWidget {
       ],
     );
   }
+
+  // .... Metotların devamı unchanged kalacak (SliverAppBar pb.). Alt satırda SliverList güncellemesi var. Değişken limitini aşmamak için bunu parçalıyorum.
+
 
   SliverAppBar _buildSliverAppBar(BuildContext context) {
     return SliverAppBar(
@@ -204,31 +222,19 @@ class HomeScreen extends StatelessWidget {
           final tx = transactions[index];
           return TransactionListItem(
             transaction: tx,
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (ctx) => TransactionDetailDialog(transaction: tx),
+              );
+            },
             onDelete: () {
-              if (tx.id != null) provider.deleteTransaction(tx.id!);
+               if (tx.id != null) provider.deleteTransaction(tx.id!);
             },
           );
         }, childCount: transactions.length),
       ),
     );
   }
-
-  // Hızlı test için pop-up (mock ekle) mekanizması
-  void _showMockAddDialog(BuildContext context) {
-    final provider = Provider.of<TransactionProvider>(context, listen: false);
-    final isIncome = DateTime.now().second % 2 == 0;
-
-    final mockTx = models.Transaction(
-      title: isIncome ? 'Test Geliri' : 'Fatura/Market (Test)',
-      amount: 450.0,
-      type: isIncome ? 'gelir' : 'gider',
-      categoryId: isIncome ? 1 : 2,
-      date: DateTime.now(),
-    );
-    provider.addTransaction(mockTx);
-
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Test İşlemi Eklendi!')));
-  }
 }
+

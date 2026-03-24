@@ -5,14 +5,17 @@ import 'package:finans_app/models/transaction.dart';
 class TransactionListItem extends StatelessWidget {
   final Transaction transaction;
   final VoidCallback? onDelete;
+  final VoidCallback? onTap;
 
   const TransactionListItem({
     super.key,
     required this.transaction,
     this.onDelete,
+    this.onTap,
   });
 
   @override
+
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isIncome = transaction.type == 'gelir';
@@ -73,8 +76,10 @@ class TransactionListItem extends StatelessWidget {
             color: isIncome ? Colors.green : Colors.red,
           ),
         ),
+        onTap: onTap,
         onLongPress: onDelete,
       ),
     );
   }
 }
+
