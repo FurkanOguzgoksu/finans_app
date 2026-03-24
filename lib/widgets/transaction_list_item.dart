@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:finans_app/models/transaction.dart';
+import 'package:finans_app/utils/currency_formatter.dart';
 
 class TransactionListItem extends StatelessWidget {
   final Transaction transaction;
   final VoidCallback? onDelete;
+  final VoidCallback? onTap;
 
   const TransactionListItem({
     super.key,
     required this.transaction,
     this.onDelete,
+    this.onTap,
   });
 
   @override
+
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isIncome = transaction.type == 'gelir';
@@ -66,15 +70,17 @@ class TransactionListItem extends StatelessWidget {
           ),
         ),
         trailing: Text(
-          '${isIncome ? '+' : '-'}₺ ${transaction.amount.toStringAsFixed(2)}',
+          '${isIncome ? '+' : '-'}₺ ${CurrencyFormatter.format(transaction.amount)}',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 16,
             color: isIncome ? Colors.green : Colors.red,
           ),
         ),
+        onTap: onTap,
         onLongPress: onDelete,
       ),
     );
   }
 }
+

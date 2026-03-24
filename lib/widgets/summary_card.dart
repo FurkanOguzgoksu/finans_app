@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:finans_app/utils/currency_formatter.dart';
 
 class SummaryCard extends StatelessWidget {
   final double totalIncome;
@@ -49,7 +50,7 @@ class SummaryCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '₺ ${balance.toStringAsFixed(2)}',
+            '₺ ${CurrencyFormatter.format(balance)}',
             style: theme.textTheme.headlineLarge?.copyWith(
               color: colorScheme.onPrimary,
               fontWeight: FontWeight.bold,
@@ -114,7 +115,7 @@ class SummaryCard extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              '₺ ${amount.toStringAsFixed(2)}',
+              '₺ ${CurrencyFormatter.format(amount)}',
               style: TextStyle(
                 color: colorScheme.onPrimary,
                 fontSize: 16,

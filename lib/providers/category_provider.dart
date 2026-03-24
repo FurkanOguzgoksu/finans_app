@@ -17,12 +17,28 @@ class CategoryProvider with ChangeNotifier {
 
     try {
       _categories = await _categoryDao.getAll();
+      
+      // Güvenlik Önlemi: Eğer veritabanında hiç kategori yoksa (eski sürümden kalmışsa), 
+      // temel kategorileri ekleyip tekrar çekelim.
+      if (_categories.isEmpty) {
+        debugPrint("Veritabanı boş, varsayılan kategoriler yükleniyor...");
+        await _categoryDao.insert(Category(name: 'Market & Mutfak', type: 'gider', icon: 'shopping_cart', color: '#FF9800'));
+        await _categoryDao.insert(Category(name: 'Faturalar', type: 'gider', icon: 'receipt_long', color: '#F44336'));
+        await _categoryDao.insert(Category(name: 'Ulaşım', type: 'gider', icon: 'directions_bus', color: '#2196F3'));
+        await _categoryDao.insert(Category(name: 'Yemek & Kafe', type: 'gider', icon: 'restaurant', color: '#E91E63'));
+        await _categoryDao.insert(Category(name: 'Sağlık', type: 'gider', icon: 'local_hospital', color: '#9C27B0'));
+        await _categoryDao.insert(Category(name: 'Maaş', type: 'gelir', icon: 'account_balance_wallet', color: '#4CAF50'));
+        await _categoryDao.insert(Category(name: 'Diğer Gelir', type: 'gelir', icon: 'attach_money', color: '#009688'));
+        
+        _categories = await _categoryDao.getAll();
+      }
     } catch (e) {
       debugPrint("Kategoriler yüklenirken hata: $e");
     } finally {
       _isLoading = false;
       notifyListeners();
     }
+
   }
 
   /// Yeni kategori ekler ve listeyi tazeler
