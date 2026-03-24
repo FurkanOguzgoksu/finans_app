@@ -3,7 +3,10 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/transaction_provider.dart';
 import '../providers/category_provider.dart';
+<<<<<<< HEAD
 import 'package:finans_app/utils/currency_formatter.dart';
+=======
+>>>>>>> f76e032f1e9a6a9eefaf277cd8246f716cd665c2
 import '../models/transaction.dart' as models;
 
 class AddTransactionSheet extends StatefulWidget {
@@ -68,7 +71,11 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
     }
 
     final enteredTitle = _titleController.text.trim();
+<<<<<<< HEAD
     final enteredAmount = CurrencyFormatter.parse(_amountController.text);
+=======
+    final enteredAmount = double.tryParse(_amountController.text);
+>>>>>>> f76e032f1e9a6a9eefaf277cd8246f716cd665c2
 
     if (enteredAmount == null || enteredAmount <= 0) {
       return;
@@ -190,11 +197,18 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
+<<<<<<< HEAD
                 inputFormatters: [CurrencyInputFormatter()],
                 validator: (value) {
                   if (value == null || value.isEmpty)
                     return 'Tutar girmelisiniz';
                   if (CurrencyFormatter.parse(value) == null)
+=======
+                validator: (value) {
+                  if (value == null || value.isEmpty)
+                    return 'Tutar girmelisiniz';
+                  if (double.tryParse(value) == null)
+>>>>>>> f76e032f1e9a6a9eefaf277cd8246f716cd665c2
                     return 'Geçerli bir sayı girin';
                   return null;
                 },
