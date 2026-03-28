@@ -33,9 +33,9 @@ class BackupSettingsScreen extends StatelessWidget {
                   },
                 ),
                 RadioListTile<BackupType>(
-                  title: const Text('Buluta Kaydet (Firebase)'),
-                  subtitle: const Text('Verileri bulut hesabınıza eşitler.'),
-                  value: BackupType.firebase,
+                  title: const Text('Buluta Kaydet (Supabase)'),
+                  subtitle: const Text('Verileri Supabase bulut hesabınıza eşitler.'),
+                  value: BackupType.supabase,
                   groupValue: provider.selectedBackupType,
                   onChanged: (value) {
                     if (value != null) provider.setBackupType(value);

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-// import 'package:firebase_core/firebase_core.dart';
+import 'services/supabase_service.dart';
 import 'utils/app_router.dart';
 import 'providers/backup_provider.dart';
 import 'providers/category_provider.dart';
@@ -13,12 +13,8 @@ void main() async {
   final prefs = await SharedPreferences.getInstance();
   final bool hasSeenOnboarding = prefs.getBool('has_seen_onboarding') ?? false;
 
-  // Firebase projesi bağlandığında bu yorum kaldırılacak:
-  // try {
-  //   await Firebase.initializeApp();
-  // } catch (e) {
-  //   print('Firebase Error: $e');
-  // }
+  // Supabase başlatma
+  await SupabaseService.initialize();
 
   runApp(
     MultiProvider(

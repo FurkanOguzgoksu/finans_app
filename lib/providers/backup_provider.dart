@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:finans_app/services/backup/backup_service.dart';
 import 'package:finans_app/services/backup/json_backup_service.dart';
-import 'package:finans_app/services/backup/firebase_backup_service.dart';
+import 'package:finans_app/services/backup/supabase_backup_service.dart';
 
-enum BackupType { json, firebase }
+enum BackupType { json, supabase }
 
 class BackupProvider with ChangeNotifier {
   BackupType _selectedBackupType = BackupType.json;
@@ -23,8 +23,8 @@ class BackupProvider with ChangeNotifier {
     switch (_selectedBackupType) {
       case BackupType.json:
         return JsonBackupService();
-      case BackupType.firebase:
-        return FirebaseBackupService();
+      case BackupType.supabase:
+        return SupabaseBackupService();
     }
   }
 
@@ -38,7 +38,9 @@ class BackupProvider with ChangeNotifier {
       final success = await service.exportData();
 
       if (success) {
-        _lastMessage = 'Yedekleme başarıyla tamamlandı!';
+        _lastMessage = _selectedBackupType == BackupType.supabase
+            ? '☁️ Supabase yedeklemesi başarıyla tamamlandı!'
+            : '📁 JSON yedeklemesi başarıyla tamamlandı!';
       } else {
         _lastMessage = 'Yedekleme sırasında bir hata oluştu.';
       }
@@ -60,7 +62,9 @@ class BackupProvider with ChangeNotifier {
       final success = await service.importData();
 
       if (success) {
-        _lastMessage = 'Veriler başarıyla geri yüklendi!';
+        _lastMessage = _selectedBackupType == BackupType.supabase
+            ? '☁️ Supabase\'den geri yükleme tamamlandı!'
+            : '📁 JSON\'dan geri yükleme tamamlandı!';
       } else {
         _lastMessage = 'Geri yükleme sırasında bir hata oluştu.';
       }
