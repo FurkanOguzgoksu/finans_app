@@ -6,10 +6,7 @@ import 'package:finans_app/models/category.dart' as category_models;
 import 'package:finans_app/providers/transaction_provider.dart';
 
 import 'package:finans_app/providers/category_provider.dart';
-<<<<<<< HEAD
 import 'package:finans_app/utils/currency_formatter.dart';
-=======
->>>>>>> f76e032f1e9a6a9eefaf277cd8246f716cd665c2
 
 class TransactionDetailDialog extends StatelessWidget {
   final models.Transaction transaction;
@@ -102,11 +99,7 @@ class TransactionDetailDialog extends StatelessWidget {
             
             // Tutar
             Text(
-<<<<<<< HEAD
               '${isIncome ? '+' : '-'}₺ ${CurrencyFormatter.format(transaction.amount)}',
-=======
-              '${isIncome ? '+' : '-'}₺ ${transaction.amount.toStringAsFixed(2)}',
->>>>>>> f76e032f1e9a6a9eefaf277cd8246f716cd665c2
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,

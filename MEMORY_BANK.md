@@ -1,7 +1,7 @@
 # 📋 Memory Bank - Finans Uygulaması
 
 > Bu dosya, haftalık yapılacak görevleri takip etmek için kullanılır.
-> Son güncelleme: 14 Mart 2026
+> Son güncelleme: 24 Mart 2026
 
 ---
 
@@ -55,7 +55,7 @@
 | 5 | BackupService soyut sınıfı (strateji pattern) | ✅ Tamamlandı | |
 | 6 | JsonBackupService: JSON depolama yedeği | ✅ Tamamlandı | |
 | 7 | FirebaseBackupService: Firestore senkronizasyonu | ✅ Tamamlandı | |
-| 8 | BackupSettingsScreen: JSON veya Firebase yedekleme ayar ekranı | ✅ Tamamlandı | |
+| 8 | BackupSettingsScreen: JSON veya Supabase yedekleme ayar ekranı | ✅ Tamamlandı | |
 | 9 | BackupProvider: Yedekleme durumunun state'e entegrasyonu | ✅ Tamamlandı | |
 | 10 | flutter_test ile birim testlerinin yazılması | ✅ Tamamlandı | test/services altına testler eklendi |
 
@@ -100,13 +100,13 @@
 
 | # | Görev | Durum | Notlar |
 |---|-------|-------|--------|
-| 1 | Harcama listesi ekranı (tarih gruplama, ikon, tutar) | ⬜ Bekliyor | |
-| 2 | Arama ve filtreleme (tarih aralığı, kategori) | ⬜ Bekliyor | |
-| 3 | Harcama detay ekranı (düzenleme ve silme) | ⬜ Bekliyor | |
-| 4 | Manuel harcama ekleme formu | ⬜ Bekliyor | |
-| 5 | Silme işlemi için onay dialogu | ⬜ Bekliyor | |
+| 1 | Harcama listesi ekranı (tarih gruplama, ikon, tutar) | ✅ Tamamlandı | İşlem Ekleme menüsü ile güçlendirildi |
+| 2 | Arama ve filtreleme (tarih aralığı, kategori) | ✅ Tamamlandı | transactions_screen içine eklendi |
+| 3 | Harcama detay ekranı (düzenleme ve silme) | ✅ Tamamlandı | transaction_detail_dialog.dart |
+| 4 | Manuel harcama ekleme formu | ✅ Tamamlandı | AddTransactionSheet oluşturuldu |
+| 5 | Silme işlemi için onay dialogu | ✅ Tamamlandı | Dialog içinde Onay Mekanizması |
 
-**Çıktı:** ⬜ Harcama CRUD işlemleri tamamen çalışıyor.
+**Çıktı:** ✅ Harcama CRUD işlemleri tamamen çalışıyor. Mükemmel bir şekilde tamamlandı.
 
 ---
 
@@ -256,7 +256,7 @@ Durum Emojileri:
 
 ## 📝 Geçmiş Hafta Notları
 
-_Henüz geçmiş hafta notu yok._
+- **Hafta 6 Bildirimi:** Veritabanında (SQLite) sürüm 1'den kalma tabloların boş olması sebebiyle gizli çökmeler yaşanıyordu. SQLite `version: 2`'ye güncellenerek Migration senaryosu uygulandı. Ayrıca uygulamanın yeni yolu (`2.Dönem/finans_app`) ayarlandı. İşlem Ekleme menüsü Kamera/PDF seçenekleriyle zenginleştirildi.
 
 ---
 
