@@ -24,7 +24,7 @@ class DatabaseService {
     return await openDatabase(
       path,
       version:
-          2, // Migration yönetimi için bu sürüm artırıldı (Tablo hatalarını onarmak için)
+          3, // Migration yönetimi için bu sürüm artırıldı (items_json kolonu eklendi)
       onConfigure: _onConfigure,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
@@ -60,6 +60,7 @@ class DatabaseService {
         date TEXT NOT NULL,
         description TEXT,
         receipt_id TEXT,
+        items_json TEXT,
         created_at TEXT NOT NULL,
         FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
       )
@@ -92,6 +93,10 @@ class DatabaseService {
 
       // Yepyeni şemayı ve varsayılan kategorileri baştan oluşturalım
       await _onCreate(db, newVersion);
+    }
+    if (oldVersion < 3) {
+      // items_json kolonu eklendi
+      await db.execute('ALTER TABLE transactions ADD COLUMN items_json TEXT;');
     }
   }
 

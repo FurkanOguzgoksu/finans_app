@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:finans_app/providers/backup_provider.dart';
+import 'package:finans_app/providers/category_provider.dart';
+import 'package:finans_app/providers/transaction_provider.dart';
 
 class BackupSettingsScreen extends StatelessWidget {
   const BackupSettingsScreen({super.key});
@@ -90,7 +92,14 @@ class BackupSettingsScreen extends StatelessWidget {
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
-                        onPressed: () => provider.performRestore(),
+                        onPressed: () async {
+                          await provider.performRestore();
+                          // Geri yükleme sonrası UI'ı güncellemek için verileri yeniden çek
+                          if (context.mounted) {
+                            Provider.of<CategoryProvider>(context, listen: false).loadCategories();
+                            Provider.of<TransactionProvider>(context, listen: false).loadTransactions();
+                          }
+                        },
                       ),
                     ],
                   ),

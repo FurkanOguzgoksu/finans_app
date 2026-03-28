@@ -112,8 +112,35 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                             builder: (ctx) => TransactionDetailDialog(transaction: tx),
                           );
                         },
+                        onEdit: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Düzenleme özelliği yakında eklenecek!')),
+                          );
+                        },
                         onDelete: () {
-                          if (tx.id != null) txProvider.deleteTransaction(tx.id!);
+                          if (tx.id != null) {
+                            showDialog(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: const Text('İşlemi Sil'),
+                                content: const Text('Bu işlemi silmek istediğinize emin misiniz?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.of(ctx).pop(),
+                                    child: const Text('İptal'),
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      txProvider.deleteTransaction(tx.id!);
+                                      Navigator.of(ctx).pop();
+                                    },
+                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                                    child: const Text('Sil', style: TextStyle(color: Colors.white)),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
                         },
                       );
                     },

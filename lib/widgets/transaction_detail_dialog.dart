@@ -18,7 +18,9 @@ class TransactionDetailDialog extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('İşlemi Sil'),
-        content: const Text('Bu işlemi silmek istediğinize emin misiniz? Bu işlem geri alınamaz.'),
+        content: const Text(
+          'Bu işlemi silmek istediğinize emin misiniz? Bu işlem geri alınamaz.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(), // Onay penceresini kapat
@@ -27,16 +29,18 @@ class TransactionDetailDialog extends StatelessWidget {
           ElevatedButton(
             onPressed: () {
               if (transaction.id != null) {
-                Provider.of<TransactionProvider>(context, listen: false)
-                    .deleteTransaction(transaction.id!);
-                
+                Provider.of<TransactionProvider>(
+                  context,
+                  listen: false,
+                ).deleteTransaction(transaction.id!);
+
                 // Önce onay penceresini, sonra detay penceresini kapat
                 Navigator.of(ctx).pop();
                 Navigator.of(context).pop();
-                
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('İşlem silindi.')),
-                );
+
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text('İşlem silindi.')));
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
@@ -52,33 +56,36 @@ class TransactionDetailDialog extends StatelessWidget {
     final theme = Theme.of(context);
     final isIncome = transaction.type == 'gelir';
     final dateFormat = DateFormat('dd MMMM yyyy, HH:mm', 'tr_TR');
-    
+
     // Kategoriyi bul
     final catProvider = Provider.of<CategoryProvider>(context, listen: false);
     final category = catProvider.categories.firstWhere(
       (c) => c.id == transaction.categoryId,
       orElse: () => category_models.Category(
-        id: -1, 
-        name: 'Bilinmeyen', 
+        id: -1,
+        name: 'Bilinmeyen',
 
-        type: transaction.type, 
-        color: '#808080'
-
+        type: transaction.type,
+        color: '#808080',
       ),
     );
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min, // Ekranın ortasında, sadece gerektiği kadar yer kaplar
-          children: [
+      child: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min, // Ekranın ortasında, sadece gerektiği kadar yer kaplar
+              children: [
             // İkon
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isIncome ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+                color: isIncome
+                    ? Colors.green.withOpacity(0.1)
+                    : Colors.red.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -88,15 +95,17 @@ class TransactionDetailDialog extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            
+
             // Başlık
             Text(
               transaction.title,
-              style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
-            
+
             // Tutar
             Text(
               '${isIncome ? '+' : '-'}₺ ${CurrencyFormatter.format(transaction.amount)}',
@@ -109,26 +118,124 @@ class TransactionDetailDialog extends StatelessWidget {
             const SizedBox(height: 24),
             const Divider(),
             const SizedBox(height: 16),
-            
+
             // Detay Bilgileri
-            _buildDetailRow('Kategori', category.name, theme),
+            _buildDetailRow(
+              'Tarih ve Saat',
+              dateFormat.format(transaction.date),
+              theme,
+            ),
             const SizedBox(height: 12),
-            _buildDetailRow('Tarih', dateFormat.format(transaction.date), theme),
-            // Buraya ileride OCR'dan gelen PDF linki veya not eklenebilir.
-            
+            _buildDetailRow('Kategori', category.name, theme),
+
+            if (transaction.description != null &&
+                transaction.description!.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Açıklama / Notlar',
+                    style: TextStyle(
+                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest
+                          .withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      transaction.description!,
+                      style: const TextStyle(fontSize: 15),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            if (transaction.items != null && transaction.items!.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Fiş Detayları',
+                  style: TextStyle(
+                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest.withOpacity(
+                    0.3,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: transaction.items!.length,
+                  separatorBuilder: (context, index) =>
+                      const Divider(height: 1),
+                  itemBuilder: (context, index) {
+                    final item = transaction.items![index];
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              item.name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            '₺ ${CurrencyFormatter.format(item.amount)}',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+
             const SizedBox(height: 32),
-            
+
             // Aksiyon Butonları
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.of(context).pop(),
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                         const SnackBar(content: Text('Düzenleme özelliği yakında!')),
+                      );
+                    },
+                    icon: const Icon(Icons.edit_outlined, size: 20),
+                    label: const Text('Düzenle'),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
-                    child: const Text('Kapat'),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -142,16 +249,28 @@ class TransactionDetailDialog extends StatelessWidget {
                       foregroundColor: Colors.red,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                 ),
               ],
-            )
+            ),
           ],
         ),
       ),
-    );
+      Positioned(
+        top: 8,
+        right: 8,
+        child: IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
+    ],
+  ),
+);
   }
 
   Widget _buildDetailRow(String label, String value, ThemeData theme) {
@@ -160,7 +279,10 @@ class TransactionDetailDialog extends StatelessWidget {
       children: [
         Text(
           label,
-          style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6), fontSize: 16),
+          style: TextStyle(
+            color: theme.colorScheme.onSurface.withOpacity(0.6),
+            fontSize: 16,
+          ),
         ),
         Text(
           value,

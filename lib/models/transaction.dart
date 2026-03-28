@@ -1,3 +1,27 @@
+import 'dart:convert';
+
+/// Fiş/Fatura Kalemi (Alt İşlem) modeli
+class TransactionItem {
+  final String name;
+  final double amount;
+
+  TransactionItem({required this.name, required this.amount});
+
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'amount': amount,
+    };
+  }
+
+  factory TransactionItem.fromMap(Map<String, dynamic> map) {
+    return TransactionItem(
+      name: map['name'] as String,
+      amount: (map['amount'] as num).toDouble(),
+    );
+  }
+}
+
 /// İşlem (Transaction) modeli - Gelir ve gider kayıtlarını temsil eder
 class Transaction {
   final int? id;
@@ -8,6 +32,7 @@ class Transaction {
   final DateTime date;
   final String? description;
   final String? receiptId;
+  final List<TransactionItem>? items;
   final DateTime createdAt;
 
   Transaction({
@@ -19,6 +44,7 @@ class Transaction {
     required this.date,
     this.description,
     this.receiptId,
+    this.items,
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
@@ -33,6 +59,7 @@ class Transaction {
       'date': date.toIso8601String(),
       'description': description,
       'receipt_id': receiptId,
+      'items_json': items != null ? jsonEncode(items!.map((e) => e.toMap()).toList()) : null,
       'created_at': createdAt.toIso8601String(),
     };
   }
@@ -48,6 +75,11 @@ class Transaction {
       date: DateTime.parse(map['date'] as String),
       description: map['description'] as String?,
       receiptId: map['receipt_id'] as String?,
+      items: map['items_json'] != null
+          ? (jsonDecode(map['items_json'] as String) as List)
+              .map((e) => TransactionItem.fromMap(e as Map<String, dynamic>))
+              .toList()
+          : null,
       createdAt: DateTime.parse(map['created_at'] as String),
     );
   }
@@ -62,6 +94,7 @@ class Transaction {
     DateTime? date,
     String? description,
     String? receiptId,
+    List<TransactionItem>? items,
     DateTime? createdAt,
   }) {
     return Transaction(
@@ -73,6 +106,7 @@ class Transaction {
       date: date ?? this.date,
       description: description ?? this.description,
       receiptId: receiptId ?? this.receiptId,
+      items: items ?? this.items,
       createdAt: createdAt ?? this.createdAt,
     );
   }
