@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'services/supabase_service.dart';
 import 'utils/app_router.dart';
 import 'providers/backup_provider.dart';
 import 'providers/category_provider.dart';
 import 'providers/transaction_provider.dart';
+import 'providers/theme_provider.dart';
+import 'utils/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,12 +16,16 @@ void main() async {
   final prefs = await SharedPreferences.getInstance();
   final bool hasSeenOnboarding = prefs.getBool('has_seen_onboarding') ?? false;
 
+  // Türkçe tarih formatı için locale başlatma
+  await initializeDateFormatting('tr_TR');
+
   // Supabase başlatma
   await SupabaseService.initialize();
 
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => BackupProvider()),
         ChangeNotifierProvider(
           create: (_) => CategoryProvider()..loadCategories(),
@@ -42,39 +49,9 @@ class FinansApp extends StatelessWidget {
       title: 'Finans Takip',
       debugShowCheckedModeBanner: false,
 
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF1565C0),
-          brightness: Brightness.light,
-          surface: Colors.white,
-        ),
-        scaffoldBackgroundColor: const Color(0xFFF5F5F5), // Açık mod arka planı
-        appBarTheme: const AppBarTheme(
-          centerTitle: true,
-          elevation: 0,
-          backgroundColor: Color(0xFF1565C0),
-          foregroundColor: Colors.white,
-        ),
-        useMaterial3: true,
-      ),
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF1565C0),
-          brightness: Brightness.dark,
-          surface: const Color(0xFF1E1E1E),
-        ),
-        scaffoldBackgroundColor: const Color(
-          0xFF121212,
-        ), // Koyu mod arka planı (neredeyse siyah)
-        appBarTheme: const AppBarTheme(
-          centerTitle: true,
-          elevation: 0,
-          backgroundColor: Color(0xFF1E1E1E),
-          foregroundColor: Colors.white,
-        ),
-        useMaterial3: true,
-      ),
-      themeMode: ThemeMode.system,
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: context.watch<ThemeProvider>().themeMode,
       routerConfig: AppRouter.createRouter(showOnboarding),
     );
   }
