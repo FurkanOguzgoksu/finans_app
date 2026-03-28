@@ -5,7 +5,7 @@ import 'package:finans_app/models/transaction.dart' as models;
 
 // UI Bileşenleri (Widgets)
 import 'package:finans_app/widgets/summary_card.dart';
-import 'package:finans_app/widgets/dashboard_chart.dart';
+import 'package:finans_app/widgets/budget_progress_card.dart';
 import 'package:finans_app/widgets/transaction_list_item.dart';
 import 'package:finans_app/utils/responsive_layout.dart';
 import 'package:finans_app/widgets/transaction_options_sheet.dart';
@@ -70,8 +70,7 @@ class HomeScreen extends StatelessWidget {
                   balance: provider.balance,
                 ),
                 const SizedBox(height: 24),
-                _buildSectionTitle(context, 'Aylık Analiz'),
-                const DashboardChart(),
+                const BudgetProgressCard(), // Bütçe kartı
                 const SizedBox(height: 24),
                 _buildSectionTitle(context, 'Son İşlemler'),
                 const SizedBox(height: 12),
@@ -112,8 +111,7 @@ class HomeScreen extends StatelessWidget {
                         balance: provider.balance,
                       ),
                       const SizedBox(height: 24),
-                      _buildSectionTitle(context, 'Aylık Analiz'),
-                      const DashboardChart(),
+                      const BudgetProgressCard(),
                     ],
                   ),
                 ),
@@ -143,9 +141,34 @@ class HomeScreen extends StatelessWidget {
                                   builder: (ctx) => TransactionDetailDialog(transaction: tx),
                                 );
                               },
+                              onEdit: () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Düzenleme özelliği yakında eklenecek!')),
+                                );
+                              },
                               onDelete: () {
                                 if (tx.id != null) {
-                                  provider.deleteTransaction(tx.id!);
+                                  showDialog(
+                                    context: context,
+                                    builder: (ctx) => AlertDialog(
+                                      title: const Text('İşlemi Sil'),
+                                      content: const Text('Bu işlemi silmek istediğinize emin misiniz?'),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.of(ctx).pop(),
+                                          child: const Text('İptal'),
+                                        ),
+                                        ElevatedButton(
+                                          onPressed: () {
+                                            provider.deleteTransaction(tx.id!);
+                                            Navigator.of(ctx).pop();
+                                          },
+                                          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                                          child: const Text('Sil', style: TextStyle(color: Colors.white)),
+                                        ),
+                                      ],
+                                    ),
+                                  );
                                 }
                               },
                             );
@@ -228,8 +251,35 @@ class HomeScreen extends StatelessWidget {
                 builder: (ctx) => TransactionDetailDialog(transaction: tx),
               );
             },
+            onEdit: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Düzenleme özelliği yakında eklenecek!')),
+              );
+            },
             onDelete: () {
-               if (tx.id != null) provider.deleteTransaction(tx.id!);
+               if (tx.id != null) {
+                 showDialog(
+                   context: context,
+                   builder: (ctx) => AlertDialog(
+                     title: const Text('İşlemi Sil'),
+                     content: const Text('Bu işlemi silmek istediğinize emin misiniz?'),
+                     actions: [
+                       TextButton(
+                         onPressed: () => Navigator.of(ctx).pop(),
+                         child: const Text('İptal'),
+                       ),
+                       ElevatedButton(
+                         onPressed: () {
+                           provider.deleteTransaction(tx.id!);
+                           Navigator.of(ctx).pop();
+                         },
+                         style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                         child: const Text('Sil', style: TextStyle(color: Colors.white)),
+                       ),
+                     ],
+                   ),
+                 );
+               }
             },
           );
         }, childCount: transactions.length),
