@@ -6,22 +6,21 @@ import 'package:finans_app/utils/currency_formatter.dart';
 class TransactionListItem extends StatelessWidget {
   final Transaction transaction;
   final VoidCallback? onDelete;
+  final VoidCallback? onEdit;
   final VoidCallback? onTap;
 
   const TransactionListItem({
     super.key,
     required this.transaction,
     this.onDelete,
+    this.onEdit,
     this.onTap,
   });
 
   @override
-
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isIncome = transaction.type == 'gelir';
-
-    // Tarihi formatla (Örn: 10 Mar 2026)
     final dateFormat = DateFormat('dd MMM yyyy');
     final formattedDate = dateFormat.format(transaction.date);
 
@@ -49,9 +48,7 @@ class TransactionListItem extends StatelessWidget {
             shape: BoxShape.circle,
           ),
           child: Icon(
-            isIncome
-                ? Icons.arrow_downward_rounded
-                : Icons.arrow_upward_rounded,
+            isIncome ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
             color: isIncome ? Colors.green : Colors.red,
           ),
         ),
@@ -69,18 +66,61 @@ class TransactionListItem extends StatelessWidget {
             ),
           ),
         ),
-        trailing: Text(
-          '${isIncome ? '+' : '-'}₺ ${CurrencyFormatter.format(transaction.amount)}',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-            color: isIncome ? Colors.green : Colors.red,
-          ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Tutar
+            Text(
+              '${isIncome ? '+' : '-'}₺ ${CurrencyFormatter.format(transaction.amount)}',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: isIncome ? Colors.green : Colors.red,
+              ),
+            ),
+            const SizedBox(width: 4),
+            // 3 Nokta Menüsü
+            PopupMenuButton<String>(
+              icon: Icon(
+                Icons.more_vert,
+                color: theme.colorScheme.onSurface.withOpacity(0.5),
+                size: 20,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              onSelected: (value) {
+                if (value == 'edit') onEdit?.call();
+                if (value == 'delete') onDelete?.call();
+              },
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'edit',
+                  child: Row(
+                    children: [
+                      Icon(Icons.edit_outlined, size: 18),
+                      SizedBox(width: 10),
+                      Text('Düzenle'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                      SizedBox(width: 10),
+                      Text('Sil', style: TextStyle(color: Colors.red)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
         onTap: onTap,
-        onLongPress: onDelete,
+        // onLongPress kaldırıldı — artık 3 nokta menüsü kullanılıyor
       ),
     );
   }
 }
-
