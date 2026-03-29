@@ -114,13 +114,13 @@
 
 | # | Görev | Durum | Notlar |
 |---|-------|-------|--------|
-| 1 | Ayarlar ekranının oluşturulması | ⬜ Bekliyor | |
-| 2 | Aylık gelir tanımlama formu ve SharedPreferences | ⬜ Bekliyor | |
-| 3 | Kategori yönetimi ekranı | ⬜ Bekliyor | |
-| 4 | Uygulama teması (açık/koyu mod) tercihi | ⬜ Bekliyor | Kısmen başladı |
-| 5 | Versiyon bilgisi ve uygulama hakkında bölümü | ⬜ Bekliyor | |
+| 1 | Ayarlar ekranının oluşturulması | ✅ Tamamlandı | 5 bölümlü zengin ayarlar ekranı: Finansal, Görünüm, Kategoriler, Yedekleme, Hakkında |
+| 2 | Aylık gelir tanımlama formu ve SharedPreferences | ✅ Tamamlandı | SettingsProvider + SharedPreferences ile gelir kaydı |
+| 3 | Kategori yönetimi ekranı | ✅ Tamamlandı | TabBar ile Gelir/Gider, ikon ve renk seçici ile CRUD |
+| 4 | Uygulama teması (açık/koyu mod) tercihi | ✅ Tamamlandı | SegmentedButton ile Sistem/Aydınlık/Karanlık seçimi |
+| 5 | Versiyon bilgisi ve uygulama hakkında bölümü | ✅ Tamamlandı | Versiyon, geliştirici, platform, lisanslar bölümü |
 
-**Çıktı:** ⬜ Kullanıcı aylık gelirini tanımlayabiliyor.
+**Çıktı:** ✅ Kullanıcı aylık gelirini tanımlayabiliyor.
 
 > 🎥 **NOT: 30 Mart – 03 Nisan 2026 tarihleri arasında video çekimi yapılacaktır.**
 

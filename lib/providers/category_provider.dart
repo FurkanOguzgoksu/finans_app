@@ -60,4 +60,16 @@ class CategoryProvider with ChangeNotifier {
   List<Category> getCategoriesByType(String type) {
     return _categories.where((cat) => cat.type == type).toList();
   }
+
+  /// Kategoriyi günceller ve listeyi tazeler
+  Future<void> updateCategory(Category category) async {
+    await _categoryDao.update(category);
+    await loadCategories();
+  }
+
+  /// Kategoriyi siler ve listeyi tazeler
+  Future<void> deleteCategory(int id) async {
+    await _categoryDao.delete(id);
+    await loadCategories();
+  }
 }

@@ -1,5 +1,6 @@
-import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:flutter/foundation.dart';
 
 /// Veritabanı servisi (DatabaseHelper) - SQLite veritabanı yönetimini sağlar
 class DatabaseService {
@@ -18,6 +19,18 @@ class DatabaseService {
 
   /// Veritabanını başlatır ve tabloları oluşturur
   Future<Database> _initDatabase() async {
+    if (kIsWeb) {
+      // Note: For full Web support with sqflite, sqflite_common_ffi_web is required.
+      throw UnsupportedError(
+        'Platform (Web) is not supported for sqflite natively. '
+        'Please build and run the application for Windows (option [1]) instead of Chrome.',
+      );
+    } else if (defaultTargetPlatform == TargetPlatform.windows || 
+               defaultTargetPlatform == TargetPlatform.linux) {
+      sqfliteFfiInit();
+      databaseFactory = databaseFactoryFfi;
+    }
+
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, 'finans_app.db');
 

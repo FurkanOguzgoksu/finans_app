@@ -7,6 +7,7 @@ import 'package:finans_app/screens/settings_screen.dart';
 import 'package:finans_app/screens/receipt_scan_screen.dart';
 import 'package:finans_app/screens/onboarding_screen.dart';
 import 'package:finans_app/screens/backup_settings_screen.dart';
+import 'package:finans_app/screens/category_management_screen.dart';
 
 /// Uygulama navigasyon yapılandırması (go_router)
 class AppRouter {
@@ -80,6 +81,12 @@ class AppRouter {
           path: '/backup_settings',
           name: 'backup_settings',
           builder: (context, state) => const BackupSettingsScreen(),
+        ),
+        // Kategori Yönetimi (tam ekran)
+        GoRoute(
+          path: '/category_management',
+          name: 'category_management',
+          builder: (context, state) => const CategoryManagementScreen(),
         ),
       ],
     );
