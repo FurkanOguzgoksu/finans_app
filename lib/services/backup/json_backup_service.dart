@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
 
@@ -38,10 +39,10 @@ class JsonBackupService implements BackupService {
       final file = File('${directory.path}/finans_backup_$dateStr.json');
 
       await file.writeAsString(jsonString);
-      print('Yedekleme başarılı: ${file.path}');
+      debugPrint('Yedekleme başarılı: ${file.path}');
       return true;
     } catch (e) {
-      print('JSON Dışa Aktarırken Hata: $e');
+      debugPrint('JSON Dışa Aktarırken Hata: $e');
       return false;
     }
   }
@@ -56,10 +57,10 @@ class JsonBackupService implements BackupService {
       // final backupData = jsonDecode(jsonString);
       // DB'yi temizle ve döngü ile insert yap...
       
-      print('JSON İçe Aktarma çağrıldı');
+      debugPrint('JSON İçe Aktarma çağrıldı');
       return true;
     } catch (e) {
-      print('JSON İçe Aktarırken Hata: $e');
+      debugPrint('JSON İçe Aktarırken Hata: $e');
       return false;
     }
   }

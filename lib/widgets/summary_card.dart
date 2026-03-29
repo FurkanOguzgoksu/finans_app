@@ -33,7 +33,7 @@ class SummaryCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.primary.withOpacity(0.3),
+            color: colorScheme.primary.withValues(alpha: 0.3),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -45,7 +45,7 @@ class SummaryCard extends StatelessWidget {
           Text(
             'Toplam Bakiye',
             style: theme.textTheme.titleMedium?.copyWith(
-              color: colorScheme.onPrimary.withOpacity(0.8),
+              color: colorScheme.onPrimary.withValues(alpha: 0.8),
             ),
           ),
           const SizedBox(height: 8),
@@ -97,7 +97,7 @@ class SummaryCard extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: colorScheme.onPrimary.withOpacity(0.2),
+            color: colorScheme.onPrimary.withValues(alpha: 0.2),
             shape: BoxShape.circle,
           ),
           child: Icon(iconData, color: iconColor, size: 20),
@@ -109,7 +109,7 @@ class SummaryCard extends StatelessWidget {
             Text(
               title,
               style: TextStyle(
-                color: colorScheme.onPrimary.withOpacity(0.7),
+                color: colorScheme.onPrimary.withValues(alpha: 0.7),
                 fontSize: 14,
               ),
             ),

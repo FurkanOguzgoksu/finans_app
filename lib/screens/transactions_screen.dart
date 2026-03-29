@@ -51,7 +51,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
-                fillColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                 contentPadding: const EdgeInsets.symmetric(vertical: 0),
               ),
               onChanged: (value) => setState(() => _searchQuery = value),
@@ -93,7 +93,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.search_off, size: 64, color: Colors.grey.withOpacity(0.5)),
+                        Icon(Icons.search_off, size: 64, color: Colors.grey.withValues(alpha: 0.5)),
                         const SizedBox(height: 16),
                         const Text('Arama kriterlerine uygun işlem bulunamadı.', style: TextStyle(color: Colors.grey)),
                       ],

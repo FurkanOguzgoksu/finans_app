@@ -20,7 +20,6 @@ class AppTheme {
         brightness: Brightness.light,
         primary: _primaryLight,
         surface: _surfaceLight,
-        background: _backgroundLight,
       ),
       scaffoldBackgroundColor: _backgroundLight,
       appBarTheme: const AppBarTheme(
@@ -55,7 +54,6 @@ class AppTheme {
         brightness: Brightness.dark,
         primary: _primaryDark,
         surface: _surfaceDark,
-        background: _backgroundDark,
       ),
       scaffoldBackgroundColor: _backgroundDark,
       appBarTheme: const AppBarTheme(

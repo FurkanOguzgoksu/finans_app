@@ -31,7 +31,7 @@ class TransactionListItem extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -43,8 +43,8 @@ class TransactionListItem extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: isIncome
-                ? Colors.green.withOpacity(0.1)
-                : Colors.red.withOpacity(0.1),
+                ? Colors.green.withValues(alpha: 0.1)
+                : Colors.red.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: Icon(
@@ -61,7 +61,7 @@ class TransactionListItem extends StatelessWidget {
           child: Text(
             formattedDate,
             style: TextStyle(
-              color: theme.colorScheme.onSurface.withOpacity(0.5),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
               fontSize: 12,
             ),
           ),
@@ -83,7 +83,7 @@ class TransactionListItem extends StatelessWidget {
             PopupMenuButton<String>(
               icon: Icon(
                 Icons.more_vert,
-                color: theme.colorScheme.onSurface.withOpacity(0.5),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                 size: 20,
               ),
               shape: RoundedRectangleBorder(

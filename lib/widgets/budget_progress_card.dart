@@ -65,10 +65,10 @@ class BudgetProgressCard extends StatelessWidget {
                         minHeight: 22,
                         backgroundColor: Theme.of(
                           context,
-                        ).colorScheme.primary.withOpacity(0.1),
+                        ).colorScheme.primary.withValues(alpha: 0.1),
                         color: isOverBudget
-                            ? Colors.red.withOpacity(0.85)
-                            : Theme.of(context).colorScheme.primary.withOpacity(0.85),
+                            ? Colors.red.withValues(alpha: 0.85)
+                            : Theme.of(context).colorScheme.primary.withValues(alpha: 0.85),
                         borderRadius: BorderRadius.circular(11),
                       ),
                       Text(
@@ -76,7 +76,7 @@ class BudgetProgressCard extends StatelessWidget {
                         style: TextStyle(
                           color: progress > 0.4 
                               ? Colors.white 
-                              : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                           fontWeight: FontWeight.bold,
                           fontSize: 12,
                         ),
@@ -101,7 +101,7 @@ class BudgetProgressCard extends StatelessWidget {
                         style: TextStyle(
                           color: Theme.of(
                             context,
-                          ).colorScheme.onSurface.withOpacity(0.6),
+                          ).colorScheme.onSurface.withValues(alpha: 0.6),
                           fontWeight: FontWeight.w500,
                         ),
                       ),

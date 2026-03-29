@@ -75,6 +75,7 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
       lastDate: DateTime.now(),
     ).then((pickedDate) {
       if (pickedDate == null) return;
+      if (!mounted) return;
       showTimePicker(
         context: context,
         initialTime: TimeOfDay.fromDateTime(_selectedDate),
@@ -255,8 +256,8 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
                   ) {
                     if (states.contains(WidgetState.selected)) {
                       return _isIncome
-                          ? Colors.green.withOpacity(0.2)
-                          : Colors.red.withOpacity(0.2);
+                          ? Colors.green.withValues(alpha: 0.2)
+                          : Colors.red.withValues(alpha: 0.2);
                     }
                     return theme.colorScheme.surface;
                   }),
@@ -272,8 +273,9 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
                   border: OutlineInputBorder(),
                 ),
                 validator: (value) {
-                  if (value == null || value.trim().isEmpty)
+                  if (value == null || value.trim().isEmpty) {
                     return 'Başlık boş olamaz';
+                  }
                   return null;
                 },
               ),
@@ -425,9 +427,9 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.colorScheme.outline.withOpacity(0.3)),
+        border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -451,8 +453,9 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
                         border: OutlineInputBorder(),
                       ),
                       validator: (value) {
-                        if (value == null || value.trim().isEmpty)
+                        if (value == null || value.trim().isEmpty) {
                           return 'Eksik';
+                        }
                         return null;
                       },
                     ),
@@ -474,8 +477,9 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
                         border: OutlineInputBorder(),
                       ),
                       validator: (value) {
-                        if (value == null || value.trim().isEmpty)
+                        if (value == null || value.trim().isEmpty) {
                           return 'Eksik';
+                        }
                         return null;
                       },
                     ),

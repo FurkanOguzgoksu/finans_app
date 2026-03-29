@@ -11,7 +11,7 @@ class TransactionProvider with ChangeNotifier {
   double _totalIncome = 0.0;
   double _totalExpense = 0.0;
   double _balance = 0.0;
-  double _budgetLimit = 7500.0;
+  double _budgetLimit = 10000.0;
 
   List<models.Transaction> get transactions => _transactions;
   bool get isLoading => _isLoading;
@@ -26,7 +26,7 @@ class TransactionProvider with ChangeNotifier {
 
   Future<void> _loadBudgetLimit() async {
     final prefs = await SharedPreferences.getInstance();
-    _budgetLimit = prefs.getDouble('budget_limit') ?? 7500.0;
+    _budgetLimit = prefs.getDouble('budget_limit') ?? 10000.0;
     notifyListeners();
   }
 
