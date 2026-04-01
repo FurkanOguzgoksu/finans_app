@@ -21,7 +21,7 @@ class TransactionListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isIncome = transaction.type == 'gelir';
-    final dateFormat = DateFormat('dd MMM yyyy');
+    final dateFormat = DateFormat('dd MMM yyyy, HH:mm', 'tr_TR');
     final formattedDate = dateFormat.format(transaction.date);
 
     return Container(
