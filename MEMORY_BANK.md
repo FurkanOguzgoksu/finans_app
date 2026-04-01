@@ -119,8 +119,10 @@
 | 3 | Kategori yönetimi ekranı | ✅ Tamamlandı | TabBar ile Gelir/Gider, ikon ve renk seçici ile CRUD |
 | 4 | Uygulama teması (açık/koyu mod) tercihi | ✅ Tamamlandı | SegmentedButton ile Sistem/Aydınlık/Karanlık seçimi |
 | 5 | Versiyon bilgisi ve uygulama hakkında bölümü | ✅ Tamamlandı | Versiyon, geliştirici, platform, lisanslar bölümü |
+| 6 | Profil ekranı oluşturulması ve fotoğraf yönetimi | ✅ Tamamlandı | image_picker (kamera/galeri), image_cropper (yuvarlak kırpma), izin sistemi, animasyonlu tam ekran görüntüleme |
+| 7 | Status bar tema uyumu | ✅ Tamamlandı | Karanlık/aydınlık modda status bar ve navigation bar rengi otomatik dönüşüyor |
 
-**Çıktı:** ✅ Kullanıcı aylık gelirini tanımlayabiliyor.
+**Çıktı:** ✅ Ayarlar ekranı, kullanıcı profil yönetimi ve tema altyapısı tamamen bitti.
 
 > 🎥 **NOT: 30 Mart – 03 Nisan 2026 tarihleri arasında video çekimi yapılacaktır.**
 
@@ -132,11 +134,11 @@
 
 | # | Görev | Durum | Notlar |
 |---|-------|-------|--------|
-| 1 | image_picker ile kamera ve galeri erişimi | ⬜ Bekliyor | |
+| 1 | image_picker ile kamera ve galeri erişimi | ⬜ Bekliyor | OCR için kamera/galeri erişimi |
 | 2 | google_ml_kit text recognition API entegrasyonu | ⬜ Bekliyor | |
 | 3 | On-device OCR akışının kurulması | ⬜ Bekliyor | |
 | 4 | OCR çıktısının ham metin olarak ekranda gösterilmesi | ⬜ Bekliyor | |
-| 5 | Ön işleme (kırpma vb.) ve testler ile hata yönetimi | ⬜ Bekliyor | |
+| 5 | Ön işleme (kırpma vb.) ve testler ile hata yönetimi | ⬜ Bekliyor | Fişler için kırpma/filtreleme |
 
 **Çıktı:** ⬜ Kameradan/galeriden metin tanıma çalışıyor.
 
@@ -256,6 +258,7 @@ Durum Emojileri:
 
 ## 📝 Geçmiş Hafta Notları
 
+- **Hafta 7 Kapanış Notları:** Tüm planlı görevler tamamlandı. Ek olarak: Profil fotoğrafında `permission_handler` ile Android izin sistemi (kamera/galeri/kalıcı red yönetimi), `CropStyle.circle` ile yuvarlak kırpma, `InteractiveViewer` ile pinch-to-zoom ekranı, `UCropTheme` ile Android native status bar taşma sorunu düzeldi. `SystemChrome.setSystemUIOverlayStyle` ile tüm uygulamada karanlık/aydınlık moda göre status bar/nav bar rengi otomatik dönüşüyor. Ayarlar ekranında profil avatarinin görünmemesine yol açan `NetworkImage` → `FileImage` bug'u düzeltildi.
 - **Hafta 6 Bildirimi:** Veritabanında (SQLite) sürüm 1'den kalma tabloların boş olması sebebiyle gizli çökmeler yaşanıyordu. SQLite `version: 2`'ye güncellenerek Migration senaryosu uygulandı. Ayrıca uygulamanın yeni yolu (`2.Dönem/finans_app`) ayarlandı. İşlem Ekleme menüsü Kamera/PDF seçenekleriyle zenginleştirildi.
 
 ---

@@ -25,23 +25,25 @@ class BackupSettingsScreen extends StatelessWidget {
                 const SizedBox(height: 16),
 
                 // Yöntem Seçimi
-                RadioListTile<BackupType>(
-                  title: const Text('Cihaza Kaydet (JSON)'),
-                  subtitle: const Text('Verileri telefon hafızasına kaydeder.'),
-                  value: BackupType.json,
+                RadioGroup<BackupType>(
                   groupValue: provider.selectedBackupType,
                   onChanged: (value) {
                     if (value != null) provider.setBackupType(value);
                   },
-                ),
-                RadioListTile<BackupType>(
-                  title: const Text('Buluta Kaydet (Supabase)'),
-                  subtitle: const Text('Verileri Supabase bulut hesabınıza eşitler.'),
-                  value: BackupType.supabase,
-                  groupValue: provider.selectedBackupType,
-                  onChanged: (value) {
-                    if (value != null) provider.setBackupType(value);
-                  },
+                  child: Column(
+                    children: [
+                      RadioListTile<BackupType>(
+                        title: const Text('Cihaza Kaydet (JSON)'),
+                        subtitle: const Text('Verileri telefon hafızasına kaydeder.'),
+                        value: BackupType.json,
+                      ),
+                      RadioListTile<BackupType>(
+                        title: const Text('Buluta Kaydet (Supabase)'),
+                        subtitle: const Text('Verileri Supabase bulut hesabınıza eşitler.'),
+                        value: BackupType.supabase,
+                      ),
+                    ],
+                  ),
                 ),
 
                 const SizedBox(height: 32),
@@ -52,8 +54,8 @@ class BackupSettingsScreen extends StatelessWidget {
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: provider.lastMessage!.contains('başarı')
-                          ? Colors.green.withAlpha(50)
-                          : Colors.red.withAlpha(50),
+                          ? Colors.green.withValues(alpha: 50/255)
+                          : Colors.red.withValues(alpha: 50/255),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
