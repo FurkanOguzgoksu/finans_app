@@ -39,9 +39,11 @@ dependencies:
   path: ^1.9.1
   path_provider: ^2.1.5
 
-  # OCR - Fiş/Fatura Tarama
+  # OCR - Fiş/Fatura Tarama ve Resim İşleme
   google_mlkit_text_recognition: ^0.14.0
   image_picker: ^1.1.2
+  image_cropper: ^9.0.0
+  permission_handler: ^11.3.1
 
   # Grafikler & Veri Görselleştirme
   fl_chart: ^1.2.0

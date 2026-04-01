@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -20,6 +21,10 @@ class SettingsScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 8),
         children: [
+          // ── 👤 PROFİL ──
+          _buildUserProfileSection(context, theme),
+          const Divider(height: 16),
+
           // ── 💰 FİNANSAL AYARLAR ──
           _buildSectionHeader(
             context,
@@ -85,6 +90,66 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 32),
         ],
       ),
+    );
+  }
+
+  /// Kullanıcı Profil Bölümü (Gelecekteki Login için hazırlık)
+  Widget _buildUserProfileSection(BuildContext context, ThemeData theme) {
+    return Consumer<SettingsProvider>(
+      builder: (context, settings, child) {
+        final userName = settings.userName.isNotEmpty ? settings.userName : 'Misafir Kullanıcı';
+        final userEmail = settings.userEmail.isNotEmpty ? settings.userEmail : 'Giriş yapılmadı';
+        final initial = userName.isNotEmpty ? userName[0].toUpperCase() : '?';
+        final hasPhoto = settings.userPhotoPath.isNotEmpty;
+
+        return InkWell(
+          onTap: () => context.push('/profile'),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 32,
+                  backgroundColor: theme.colorScheme.primary,
+                  foregroundColor: theme.colorScheme.onPrimary,
+                  backgroundImage: hasPhoto ? FileImage(File(settings.userPhotoPath)) : null,
+                  child: !hasPhoto
+                      ? Text(
+                          initial,
+                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                        )
+                      : null,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        userName,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        userEmail,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

@@ -15,4 +15,16 @@
     <style name="NormalTheme" parent="@android:style/Theme.Black.NoTitleBar">
         <item name="android:windowBackground">?android:colorBackground</item>
     </style>
+
+    <!-- UCrop Activity tema - Karanlık Mod -->
+    <style name="UCropTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:statusBarColor">#1565C0</item>
+        <item name="android:fitsSystemWindows">true</item>
+        <item name="colorPrimary">#1565C0</item>
+        <item name="colorPrimaryDark">#0D47A1</item>
+        <item name="colorAccent">#42A5F5</item>
+        <item name="android:navigationBarColor">#121212</item>
+    </style>
 </resources>

@@ -15,4 +15,15 @@
     <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
         <item name="android:windowBackground">?android:colorBackground</item>
     </style>
+
+    <!-- UCrop Activity teması: Durum çubuğunun taşmaması için özel tema -->
+    <style name="UCropTheme" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:statusBarColor">#1976D2</item>
+        <item name="android:fitsSystemWindows">true</item>
+        <item name="colorPrimary">#1976D2</item>
+        <item name="colorPrimaryDark">#1565C0</item>
+        <item name="colorAccent">#1976D2</item>
+    </style>
 </resources>
