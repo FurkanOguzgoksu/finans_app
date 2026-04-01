@@ -7,10 +7,14 @@ class SettingsProvider extends ChangeNotifier {
   double _monthlyIncome = 0.0;
   String _currency = '₺';
   String _userName = '';
+  String _userEmail = '';
+  String _userPhotoPath = '';
 
   double get monthlyIncome => _monthlyIncome;
   String get currency => _currency;
   String get userName => _userName;
+  String get userEmail => _userEmail;
+  String get userPhotoPath => _userPhotoPath;
 
   SettingsProvider() {
     _loadSettings();
@@ -22,6 +26,8 @@ class SettingsProvider extends ChangeNotifier {
     _monthlyIncome = prefs.getDouble('monthly_income') ?? 0.0;
     _currency = prefs.getString('currency') ?? '₺';
     _userName = prefs.getString('user_name') ?? '';
+    _userEmail = prefs.getString('user_email') ?? '';
+    _userPhotoPath = prefs.getString('user_photo_path') ?? '';
     notifyListeners();
   }
 
@@ -47,5 +53,21 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('user_name', name);
+  }
+
+  /// Kullanıcı e-postasını günceller ve kaydeder
+  Future<void> setUserEmail(String email) async {
+    _userEmail = email;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user_email', email);
+  }
+
+  /// Kullanıcı profil fotoğrafı yolunu günceller ve kaydeder
+  Future<void> setUserPhotoPath(String path) async {
+    _userPhotoPath = path;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user_photo_path', path);
   }
 }
