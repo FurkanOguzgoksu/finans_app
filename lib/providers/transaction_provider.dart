@@ -69,4 +69,10 @@ class TransactionProvider with ChangeNotifier {
     await _transactionDao.delete(id);
     await loadTransactions();
   }
+
+  /// Var olan işlemi günceller ve state'i tazeler
+  Future<void> updateTransaction(models.Transaction transaction) async {
+    await _transactionDao.update(transaction);
+    await loadTransactions();
+  }
 }

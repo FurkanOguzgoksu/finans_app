@@ -21,7 +21,9 @@ class _TransactionItemRow {
 }
 
 class AddTransactionSheet extends StatefulWidget {
-  const AddTransactionSheet({super.key});
+  final models.Transaction? transaction; // null ise yeni ekleme, dolu ise düzenleme modu
+
+  const AddTransactionSheet({super.key, this.transaction});
 
   @override
   State<AddTransactionSheet> createState() => _AddTransactionSheetState();
@@ -52,8 +54,42 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
         catProvider.loadCategories();
       }
     });
-    // Başlangıçta 1 adet boş kalem satırı ekleyelim
-    _itemRows.add(_TransactionItemRow());
+
+    final tx = widget.transaction;
+    if (tx != null) {
+      // Düzenleme modu: mevcut verileri forma yükle
+      _isIncome = tx.type == 'gelir';
+      _titleController.text = tx.title;
+      _selectedDate = tx.date;
+      _selectedCategoryId = tx.categoryId;
+      if (tx.description != null && tx.description!.isNotEmpty) {
+        _hasDescription = true;
+        _descriptionController.text = tx.description!;
+      }
+      if (_isIncome) {
+        _amountController.text = CurrencyFormatter.format(tx.amount);
+        // Gelir modunda kalem satırı gerekmez
+      } else {
+        // Kalem satırlarını doldur
+        if (tx.items != null && tx.items!.isNotEmpty) {
+          for (final item in tx.items!) {
+            final row = _TransactionItemRow();
+            row.nameController.text = item.name;
+            row.amountController.text = CurrencyFormatter.format(item.amount);
+            _itemRows.add(row);
+          }
+        } else {
+          // item yoksa tutarı tek satır olarak göster
+          final row = _TransactionItemRow();
+          row.nameController.text = tx.title;
+          row.amountController.text = CurrencyFormatter.format(tx.amount);
+          _itemRows.add(row);
+        }
+      }
+    } else {
+      // Yeni ekleme modu: boş bir satır
+      _itemRows.add(_TransactionItemRow());
+    }
   }
 
   @override
@@ -168,26 +204,41 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
       return;
     }
 
-    final newTx = models.Transaction(
-      title: enteredTitle,
-      amount: enteredAmount,
-      type: _isIncome ? 'gelir' : 'gider',
-      categoryId: _selectedCategoryId!,
-      date: _selectedDate,
-      description: enteredDescription.isNotEmpty ? enteredDescription : null,
-      items: transactionItems,
-    );
-
-    Provider.of<TransactionProvider>(
-      context,
-      listen: false,
-    ).addTransaction(newTx);
-    Navigator.of(context).pop();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${_isIncome ? "Gelir" : "Gider"} başarıyla eklendi!'),
-      ),
-    );
+    final tx = widget.transaction;
+    if (tx != null && tx.id != null) {
+      // Güncelleme modu
+      final updatedTx = models.Transaction(
+        id: tx.id,
+        title: enteredTitle,
+        amount: enteredAmount,
+        type: _isIncome ? 'gelir' : 'gider',
+        categoryId: _selectedCategoryId!,
+        date: _selectedDate,
+        description: enteredDescription.isNotEmpty ? enteredDescription : null,
+        items: transactionItems,
+      );
+      Provider.of<TransactionProvider>(context, listen: false).updateTransaction(updatedTx);
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('İşlem başarıyla güncellendi!')),
+      );
+    } else {
+      // Yeni ekleme modu
+      final newTx = models.Transaction(
+        title: enteredTitle,
+        amount: enteredAmount,
+        type: _isIncome ? 'gelir' : 'gider',
+        categoryId: _selectedCategoryId!,
+        date: _selectedDate,
+        description: enteredDescription.isNotEmpty ? enteredDescription : null,
+        items: transactionItems,
+      );
+      Provider.of<TransactionProvider>(context, listen: false).addTransaction(newTx);
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${_isIncome ? "Gelir" : "Gider"} başarıyla eklendi!')),
+      );
+    }
   }
 
   @override
@@ -359,6 +410,7 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
                   Expanded(
                     flex: 2,
                     child: DropdownButtonFormField<int>(
+                      key: ValueKey(_selectedCategoryId),
                       decoration: const InputDecoration(
                         labelText: 'Kategori',
                         border: OutlineInputBorder(),
@@ -367,7 +419,7 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
                           vertical: 16,
                         ),
                       ),
-                      value: _selectedCategoryId,
+                      initialValue: _selectedCategoryId,
                       hint: const Text('Seçiniz'),
                       items: filteredCategories.map((cat) {
                         return DropdownMenuItem<int>(
@@ -411,9 +463,9 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text(
-                  'İşlemi Kaydet',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                child: Text(
+                  widget.transaction != null ? 'Değişiklikleri Kaydet' : 'İşlemi Kaydet',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -453,7 +505,7 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
                         border: OutlineInputBorder(),
                       ),
                       validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
+                        if (!_isIncome && (value == null || value.trim().isEmpty)) {
                           return 'Eksik';
                         }
                         return null;
@@ -477,7 +529,7 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
                         border: OutlineInputBorder(),
                       ),
                       validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
+                        if (!_isIncome && (value == null || value.trim().isEmpty)) {
                           return 'Eksik';
                         }
                         return null;

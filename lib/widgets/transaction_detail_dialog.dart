@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:finans_app/models/transaction.dart' as models;
 import 'package:finans_app/models/category.dart' as category_models;
 import 'package:finans_app/providers/transaction_provider.dart';
-
+import 'package:finans_app/widgets/add_transaction_sheet.dart';
 import 'package:finans_app/providers/category_provider.dart';
 import 'package:finans_app/utils/currency_formatter.dart';
 
@@ -223,9 +223,15 @@ class TransactionDetailDialog extends StatelessWidget {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: () {
-                      Navigator.of(context).pop();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                         const SnackBar(content: Text('Düzenleme özelliği yakında!')),
+                      Navigator.of(context).pop(); // detay dialog'ı kapat
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        useSafeArea: true,
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                        ),
+                        builder: (_) => AddTransactionSheet(transaction: transaction),
                       );
                     },
                     icon: const Icon(Icons.edit_outlined, size: 20),
