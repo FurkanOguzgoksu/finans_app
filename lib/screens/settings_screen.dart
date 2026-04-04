@@ -19,7 +19,11 @@ class SettingsScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text(
           'AYARLAR',
-          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16, letterSpacing: 1.2),
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
+            letterSpacing: 1.2,
+          ),
         ),
         centerTitle: true,
       ),
@@ -47,15 +51,19 @@ class SettingsScreen extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: isDark ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3) : Colors.white,
+        color: isDark
+            ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3)
+            : Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: isDark ? null : [
-          BoxShadow(
-            color: Colors.blue.shade900.withValues(alpha: 0.05),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
-          )
-        ],
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.blue.shade900.withValues(alpha: 0.05),
+                  blurRadius: 15,
+                  offset: const Offset(0, 5),
+                ),
+              ],
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
@@ -68,7 +76,9 @@ class SettingsScreen extends StatelessWidget {
                 fontWeight: FontWeight.w800,
                 fontSize: 13,
                 letterSpacing: 1.2,
-                color: isDark ? theme.colorScheme.primary : const Color(0xFF1E3A8A), // Koyu mavi andıran başlık
+                color: isDark
+                    ? theme.colorScheme.primary
+                    : const Color(0xFF1E3A8A), // Koyu mavi andıran başlık
               ),
             ),
             const SizedBox(height: 20),
@@ -82,8 +92,12 @@ class SettingsScreen extends StatelessWidget {
   Widget _buildProfileCard(BuildContext context, ThemeData theme) {
     return Consumer<SettingsProvider>(
       builder: (context, settings, child) {
-        final userName = settings.userName.isNotEmpty ? settings.userName : 'Misafir Kullanıcı';
-        final userEmail = settings.userEmail.isNotEmpty ? settings.userEmail : 'Giriş yapılmadı';
+        final userName = settings.userName.isNotEmpty
+            ? settings.userName
+            : 'Misafir Kullanıcı';
+        final userEmail = settings.userEmail.isNotEmpty
+            ? settings.userEmail
+            : 'Giriş yapılmadı';
         final initial = userName.isNotEmpty ? userName[0].toUpperCase() : '?';
         final hasPhoto = settings.userPhotoPath.isNotEmpty;
 
@@ -96,11 +110,21 @@ class SettingsScreen extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 32,
-                  backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
+                  backgroundColor: theme.colorScheme.primary.withValues(
+                    alpha: 0.1,
+                  ),
                   foregroundColor: theme.colorScheme.primary,
-                  backgroundImage: hasPhoto ? FileImage(File(settings.userPhotoPath)) : null,
+                  backgroundImage: hasPhoto
+                      ? FileImage(File(settings.userPhotoPath))
+                      : null,
                   child: !hasPhoto
-                      ? Text(initial, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold))
+                      ? Text(
+                          initial,
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        )
                       : null,
                 ),
                 const SizedBox(width: 16),
@@ -108,11 +132,22 @@ class SettingsScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(userName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      Text(
+                        userName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
                       const SizedBox(height: 2),
                       Text(
-                        userEmail, 
-                        style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.5), fontSize: 13)
+                        userEmail,
+                        style: TextStyle(
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.5,
+                          ),
+                          fontSize: 13,
+                        ),
                       ),
                       const SizedBox(height: 12),
                       SizedBox(
@@ -121,10 +156,22 @@ class SettingsScreen extends StatelessWidget {
                           onPressed: () => context.push('/profile'),
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                            side: BorderSide(color: theme.colorScheme.outline.withValues(alpha: 0.5)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            side: BorderSide(
+                              color: theme.colorScheme.outline.withValues(
+                                alpha: 0.5,
+                              ),
+                            ),
                           ),
-                          child: const Text('Profili Düzenle', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                          child: const Text(
+                            'Profili Düzenle',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
                       ),
                     ],
@@ -143,9 +190,11 @@ class SettingsScreen extends StatelessWidget {
               trailing: Switch(
                 value: true, // Şimdilik görsel amaçlı
                 onChanged: (val) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Yakında eklenecek')));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Yakında eklenecek')),
+                  );
                 },
-                activeColor: theme.colorScheme.primary,
+                activeThumbColor: theme.colorScheme.primary,
               ),
             ),
           ],
@@ -165,7 +214,9 @@ class SettingsScreen extends StatelessWidget {
             _buildListItem(
               icon: Icons.account_balance_wallet_outlined,
               title: 'Aylık Gelir',
-              subtitle: hasIncome ? '₺${CurrencyFormatter.format(settings.monthlyIncome)}' : 'Tanımlanmadı',
+              subtitle: hasIncome
+                  ? '₺${CurrencyFormatter.format(settings.monthlyIncome)}'
+                  : 'Tanımlanmadı',
               theme: theme,
               onTap: () => _showMonthlyIncomeDialog(context, settings),
             ),
@@ -216,10 +267,17 @@ class SettingsScreen extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.brightness_6, size: 22, color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
+                Icon(
+                  Icons.brightness_6,
+                  size: 22,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                ),
                 const SizedBox(width: 16),
                 const Expanded(
-                  child: Text('Uygulama Teması', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+                  child: Text(
+                    'Uygulama Teması',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                  ),
                 ),
               ],
             ),
@@ -265,7 +323,13 @@ class SettingsScreen extends StatelessWidget {
           icon: Icons.info_outline,
           title: 'Uygulama Sürümü',
           theme: theme,
-          trailing: Text('v1.0.0', style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.5), fontWeight: FontWeight.w600)),
+          trailing: Text(
+            'v1.0.0',
+            style: TextStyle(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ),
         const Divider(height: 1),
         _buildListItem(
@@ -273,7 +337,9 @@ class SettingsScreen extends StatelessWidget {
           title: 'Yardım Merkezi',
           theme: theme,
           onTap: () {
-             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Yardım merkezi yakında eklenecek')));
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Yardım merkezi yakında eklenecek')),
+            );
           },
         ),
         const Divider(height: 1),
@@ -301,7 +367,9 @@ class SettingsScreen extends StatelessWidget {
             final url = Uri.parse('https://github.com/FurkanOguzgoksu');
             if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
               if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Bağlantı açılamadı')));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Bağlantı açılamadı')),
+                );
               }
             }
           },
@@ -327,22 +395,45 @@ class SettingsScreen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 12.0),
         child: Row(
           children: [
-            Icon(icon, size: 22, color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
+            Icon(
+              icon,
+              size: 22,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+            ),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                   if (subtitle != null) ...[
                     const SizedBox(height: 2),
-                    Text(subtitle, style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurface.withValues(alpha: 0.5))),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.5,
+                        ),
+                      ),
+                    ),
                   ],
                 ],
               ),
             ),
-            if (trailing != null) trailing
-            else if (onTap != null) Icon(Icons.chevron_right, size: 20, color: theme.colorScheme.onSurface.withValues(alpha: 0.4)),
+            if (trailing != null) trailing,
+            if (trailing == null && onTap != null)
+              Icon(
+                Icons.chevron_right,
+                size: 20,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+              ),
           ],
         ),
       ),
@@ -350,9 +441,14 @@ class SettingsScreen extends StatelessWidget {
   }
 
   /// Aylık Gelir Dialog
-  void _showMonthlyIncomeDialog(BuildContext context, SettingsProvider settings) {
+  void _showMonthlyIncomeDialog(
+    BuildContext context,
+    SettingsProvider settings,
+  ) {
     final controller = TextEditingController(
-      text: settings.monthlyIncome > 0 ? CurrencyFormatter.format(settings.monthlyIncome) : '',
+      text: settings.monthlyIncome > 0
+          ? CurrencyFormatter.format(settings.monthlyIncome)
+          : '',
     );
     showDialog(
       context: context,
@@ -380,14 +476,19 @@ class SettingsScreen extends StatelessWidget {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('İptal')),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('İptal'),
+          ),
           ElevatedButton(
             onPressed: () {
               final parsed = CurrencyFormatter.parse(controller.text);
               if (parsed != null && parsed >= 0) {
                 settings.setMonthlyIncome(parsed);
                 Navigator.of(ctx).pop();
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Aylık gelir kaydedildi')));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Aylık gelir kaydedildi')),
+                );
               }
             },
             child: const Text('Kaydet'),
@@ -398,8 +499,13 @@ class SettingsScreen extends StatelessWidget {
   }
 
   /// Bütçe Limiti Dialog
-  void _showBudgetLimitDialog(BuildContext context, TransactionProvider provider) {
-    final controller = TextEditingController(text: CurrencyFormatter.format(provider.budgetLimit));
+  void _showBudgetLimitDialog(
+    BuildContext context,
+    TransactionProvider provider,
+  ) {
+    final controller = TextEditingController(
+      text: CurrencyFormatter.format(provider.budgetLimit),
+    );
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -416,14 +522,19 @@ class SettingsScreen extends StatelessWidget {
           autofocus: true,
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('İptal')),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('İptal'),
+          ),
           ElevatedButton(
             onPressed: () {
               final newLimit = CurrencyFormatter.parse(controller.text);
               if (newLimit != null && newLimit > 0) {
                 provider.setBudgetLimit(newLimit);
                 Navigator.of(ctx).pop();
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Bütçe limiti güncellendi')));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Bütçe limiti güncellendi')),
+                );
               }
             },
             child: const Text('Kaydet'),

@@ -137,6 +137,21 @@ class ProfileScreen extends StatelessWidget {
                                           ImageSource.gallery,
                                         ),
                                       ),
+                                      if (hasPhoto)
+                                        ListTile(
+                                          leading: const Icon(
+                                            Icons.delete_outline,
+                                            color: Colors.red,
+                                          ),
+                                          title: const Text(
+                                            'Fotoğrafı Kaldır',
+                                            style: TextStyle(color: Colors.red),
+                                          ),
+                                          onTap: () {
+                                            settings.setUserPhotoPath('');
+                                            Navigator.pop(ctx);
+                                          },
+                                        ),
                                     ],
                                   ),
                                 ),

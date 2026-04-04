@@ -1,7 +1,7 @@
 # 📋 Memory Bank - Finans Uygulaması
 
 > Bu dosya, haftalık yapılacak görevleri takip etmek için kullanılır.
-> Son güncelleme: 24 Mart 2026
+> Son güncelleme: 1 Nisan 2026
 
 ---
 
@@ -134,13 +134,13 @@
 
 | # | Görev | Durum | Notlar |
 |---|-------|-------|--------|
-| 1 | image_picker ile kamera ve galeri erişimi | ⬜ Bekliyor | OCR için kamera/galeri erişimi |
-| 2 | google_ml_kit text recognition API entegrasyonu | ⬜ Bekliyor | |
-| 3 | On-device OCR akışının kurulması | ⬜ Bekliyor | |
-| 4 | OCR çıktısının ham metin olarak ekranda gösterilmesi | ⬜ Bekliyor | |
-| 5 | Ön işleme (kırpma vb.) ve testler ile hata yönetimi | ⬜ Bekliyor | Fişler için kırpma/filtreleme |
+| 1 | image_picker ile kamera ve galeri erişimi | ✅ Tamamlandı | OcrProvider: pickFromCamera() ve pickFromGallery() |
+| 2 | google_ml_kit text recognition API entegrasyonu | ✅ Tamamlandı | OcrService: TextRecognizer(script: latin) |
+| 3 | On-device OCR akışının kurulması | ✅ Tamamlandı | OcrService.recognizeText() + InputImage pipeline |
+| 4 | OCR çıktısının ham metin olarak ekranda gösterilmesi | ✅ Tamamlandı | ReceiptScanScreen: SelectableText + kopyalama |
+| 5 | Ön işleme (kırpma vb.) ve testler ile hata yönetimi | ✅ Tamamlandı | image_cropper (rectangle) + try/catch + OcrException |
 
-**Çıktı:** ⬜ Kameradan/galeriden metin tanıma çalışıyor.
+**Çıktı:** ✅ Kameradan/galeriden metin tanıma çalışıyor.
 
 > 🎥 **NOT: 13 Nisan – 17 Nisan 2026 tarihleri arasında ara sınav için video çekimi yapılacaktır.**
 
@@ -258,6 +258,7 @@ Durum Emojileri:
 
 ## 📝 Geçmiş Hafta Notları
 
+- **Hafta 8 Kapanış Notları:** Tüm planlı görevler tamamlandı. `OcrService` (lib/services/ocr_service.dart) Google ML Kit `TextRecognizer` ile on-device metin tanıma sağlıyor. `OcrProvider` (lib/providers/ocr_provider.dart) enum-tabanlı state machine ile tam akış yönetimi: idle→picking→cropping→processing→done/error. `ReceiptScanScreen` 5 farklı görünüm ile premium UI: gradient arka plan, glassmorphism kartlar, AnimatedSwitcher geçişleri, pulse animasyonu, SelectableText ile metin seçimi ve panoya kopyalama. `image_cropper` dikdörtgen kırpma ile ön işleme. `OcrException` özel hata sınıfı ile kapsamlı error handling. **Not:** google_mlkit_text_recognition sadece Android/iOS destekler, Windows/Web'de çalışmaz.
 - **Hafta 7 Kapanış Notları:** Tüm planlı görevler tamamlandı. Ek olarak: Profil fotoğrafında `permission_handler` ile Android izin sistemi (kamera/galeri/kalıcı red yönetimi), `CropStyle.circle` ile yuvarlak kırpma, `InteractiveViewer` ile pinch-to-zoom ekranı, `UCropTheme` ile Android native status bar taşma sorunu düzeldi. `SystemChrome.setSystemUIOverlayStyle` ile tüm uygulamada karanlık/aydınlık moda göre status bar/nav bar rengi otomatik dönüşüyor. Ayarlar ekranında profil avatarinin görünmemesine yol açan `NetworkImage` → `FileImage` bug'u düzeltildi.
 - **Hafta 6 Bildirimi:** Veritabanında (SQLite) sürüm 1'den kalma tabloların boş olması sebebiyle gizli çökmeler yaşanıyordu. SQLite `version: 2`'ye güncellenerek Migration senaryosu uygulandı. Ayrıca uygulamanın yeni yolu (`2.Dönem/finans_app`) ayarlandı. İşlem Ekleme menüsü Kamera/PDF seçenekleriyle zenginleştirildi.
 
