@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -76,9 +77,10 @@ class TransactionDetailDialog extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min, // Ekranın ortasında, sadece gerektiği kadar yer kaplar
-              children: [
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
             // İkon
             Container(
               padding: const EdgeInsets.all(16),
@@ -128,39 +130,8 @@ class TransactionDetailDialog extends StatelessWidget {
             const SizedBox(height: 12),
             _buildDetailRow('Kategori', category.name, theme),
 
-            if (transaction.description != null &&
-                transaction.description!.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'Açıklama / Notlar',
-                    style: TextStyle(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerHighest
-                          .withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      transaction.description!,
-                      style: const TextStyle(fontSize: 15),
-                    ),
-                  ),
-                ],
-              ),
-            ],
             if (transaction.items != null && transaction.items!.isNotEmpty) ...[
               const SizedBox(height: 16),
-              const Divider(),
-              const SizedBox(height: 8),
               Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
@@ -187,6 +158,15 @@ class TransactionDetailDialog extends StatelessWidget {
                       const Divider(height: 1),
                   itemBuilder: (context, index) {
                     final item = transaction.items![index];
+                    
+                    String displayName = item.name;
+                    if (item.quantity != 1.0 && item.quantity != 0.0) {
+                      final String qtyStr = item.quantity.toString().replaceAll(RegExp(r'\.0$'), '');
+                      final double unitPrice = item.amount / item.quantity;
+                      final String unitStr = CurrencyFormatter.format(unitPrice);
+                      displayName = '${item.name} ($qtyStr x ₺$unitStr)';
+                    }
+                    
                     return Padding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,
@@ -197,7 +177,7 @@ class TransactionDetailDialog extends StatelessWidget {
                         children: [
                           Expanded(
                             child: Text(
-                              item.name,
+                              displayName,
                               style: const TextStyle(
                                 fontWeight: FontWeight.w500,
                               ),
@@ -213,7 +193,131 @@ class TransactionDetailDialog extends StatelessWidget {
                   },
                 ),
               ),
+              const SizedBox(height: 16),
+              const Divider(),
             ],
+
+            if (transaction.description != null &&
+                transaction.description!.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Açıklama / Notlar',
+                    style: TextStyle(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  if (transaction.description!.contains('Fiş tarama (OCR)')) ...[
+                    Theme(
+                      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                      child: ExpansionTile(
+                        tilePadding: EdgeInsets.zero,
+                        title: Text(
+                          'Fiş OCR Metnini Göster',
+                          style: TextStyle(
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
+                        children: [
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              transaction.description!,
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ] else ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest
+                            .withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        transaction.description!,
+                        style: const TextStyle(fontSize: 15),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              
+            if (transaction.receiptId != null) ...[
+              const SizedBox(height: 16),
+              InkWell(
+                onTap: () {
+                   showDialog(
+                     context: context, 
+                     builder: (_) => Dialog(
+                        insetPadding: const EdgeInsets.all(16),
+                        clipBehavior: Clip.hardEdge,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        child: Stack(
+                           children: [
+                             InteractiveViewer(
+                               minScale: 1.0,
+                               maxScale: 4.0,
+                               child: Image.file(
+                                 File(transaction.receiptId!),
+                                 width: double.infinity,
+                                 fit: BoxFit.contain,
+                               ),
+                             ),
+                             Positioned(
+                               right: 8, top: 8,
+                               child: IconButton(
+                                 icon: const Icon(Icons.close, color: Colors.white),
+                                 style: IconButton.styleFrom(backgroundColor: Colors.black54),
+                                 onPressed: () => Navigator.pop(context),
+                               )
+                             )
+                           ]
+                        )
+                     )
+                   );
+                },
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.2)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.image_outlined, color: theme.colorScheme.primary),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Taranmış Fiş Fotoğrafını Gör', 
+                          style: TextStyle(fontWeight: FontWeight.w600, color: theme.colorScheme.primary),
+                        ),
+                      ),
+                      Icon(Icons.arrow_forward_ios_rounded, size: 16, color: theme.colorScheme.primary.withValues(alpha: 0.5)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+            
+            ],
+
 
             const SizedBox(height: 32),
 
@@ -265,6 +369,7 @@ class TransactionDetailDialog extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
       Positioned(
         top: 8,

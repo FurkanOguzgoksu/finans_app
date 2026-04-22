@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:finans_app/providers/transaction_provider.dart';
+import 'package:finans_app/providers/settings_provider.dart';
 import 'package:finans_app/models/transaction.dart' as models;
+import 'package:finans_app/services/recurring_income_service.dart';
 
 // UI Bileşenleri (Widgets)
 import 'package:finans_app/widgets/summary_card.dart';
@@ -11,16 +13,66 @@ import 'package:finans_app/utils/responsive_layout.dart';
 import 'package:finans_app/widgets/transaction_options_sheet.dart';
 
 import 'package:finans_app/widgets/transaction_detail_dialog.dart';
+import 'package:finans_app/widgets/add_transaction_sheet.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  bool _recurringChecked = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_recurringChecked) {
+      _recurringChecked = true;
+      _checkRecurringIncome();
+    }
+  }
+
+  /// Uygulama açıldığında tekrarlayan gelir kontrolü yapar.
+  /// SettingsProvider yüklenmeyi tamamladıktan sonra çalışır.
+  Future<void> _checkRecurringIncome() async {
+    final settings = context.read<SettingsProvider>();
+    final txProvider = context.read<TransactionProvider>();
+
+    // SettingsProvider async yüklenmiş olabilir, kısa bekleme
+    await Future.delayed(const Duration(milliseconds: 300));
+    if (!mounted) return;
+
+    final added = await RecurringIncomeService.checkAndAdd(
+      settings: settings,
+      txProvider: txProvider,
+      context: context,
+    );
+
+    if (added && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle, color: Colors.white, size: 18),
+              const SizedBox(width: 8),
+              Text('${settings.incomeTitle} otomatik eklendi ✓'),
+            ],
+          ),
+          backgroundColor: Colors.green.shade700,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
-      body: Consumer<TransactionProvider>(
-        builder: (context, provider, child) {
+      body: Consumer2<TransactionProvider, SettingsProvider>(
+        builder: (context, provider, settings, child) {
           if (provider.isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -28,8 +80,8 @@ class HomeScreen extends StatelessWidget {
           final transactions = provider.transactions;
 
           return ResponsiveLayout(
-            mobileScaffold: _buildMobileLayout(context, provider, transactions),
-            tabletScaffold: _buildTabletLayout(context, provider, transactions),
+            mobileScaffold: _buildMobileLayout(context, provider, settings, transactions),
+            tabletScaffold: _buildTabletLayout(context, provider, settings, transactions),
           );
         },
       ),
@@ -42,7 +94,6 @@ class HomeScreen extends StatelessWidget {
           );
         },
         icon: const Icon(Icons.add),
-
         label: const Text('İşlem Ekle'),
       ),
     );
@@ -52,6 +103,7 @@ class HomeScreen extends StatelessWidget {
   Widget _buildMobileLayout(
     BuildContext context,
     TransactionProvider provider,
+    SettingsProvider settings,
     List<models.Transaction> transactions,
   ) {
     return CustomScrollView(
@@ -68,6 +120,7 @@ class HomeScreen extends StatelessWidget {
                   totalIncome: provider.totalIncome,
                   totalExpense: provider.totalExpense,
                   balance: provider.balance,
+                  monthlyIncome: settings.monthlyIncome,
                 ),
                 const SizedBox(height: 24),
                 const BudgetProgressCard(), // Bütçe kartı
@@ -88,6 +141,7 @@ class HomeScreen extends StatelessWidget {
   Widget _buildTabletLayout(
     BuildContext context,
     TransactionProvider provider,
+    SettingsProvider settings,
     List<models.Transaction> transactions,
   ) {
     return CustomScrollView(
@@ -109,6 +163,7 @@ class HomeScreen extends StatelessWidget {
                         totalIncome: provider.totalIncome,
                         totalExpense: provider.totalExpense,
                         balance: provider.balance,
+                        monthlyIncome: settings.monthlyIncome,
                       ),
                       const SizedBox(height: 24),
                       const BudgetProgressCard(),
@@ -142,8 +197,14 @@ class HomeScreen extends StatelessWidget {
                                 );
                               },
                               onEdit: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Düzenleme özelliği yakında eklenecek!')),
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  useSafeArea: true,
+                                  shape: const RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                                  ),
+                                  builder: (_) => AddTransactionSheet(transaction: tx),
                                 );
                               },
                               onDelete: () {
@@ -252,8 +313,14 @@ class HomeScreen extends StatelessWidget {
               );
             },
             onEdit: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Düzenleme özelliği yakında eklenecek!')),
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                useSafeArea: true,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                ),
+                builder: (_) => AddTransactionSheet(transaction: tx),
               );
             },
             onDelete: () {

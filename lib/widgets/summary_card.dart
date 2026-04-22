@@ -5,12 +5,14 @@ class SummaryCard extends StatelessWidget {
   final double totalIncome;
   final double totalExpense;
   final double balance;
+  final double monthlyIncome;
 
   const SummaryCard({
     super.key,
     required this.totalIncome,
     required this.totalExpense,
     required this.balance,
+    this.monthlyIncome = 0.0,
   });
 
   @override
@@ -43,7 +45,7 @@ class SummaryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
-            'Toplam Bakiye',
+            monthlyIncome > 0 ? 'Net Bakiye' : 'Toplam Bakiye',
             style: theme.textTheme.titleMedium?.copyWith(
               color: colorScheme.onPrimary.withValues(alpha: 0.8),
             ),
@@ -56,7 +58,36 @@ class SummaryCard extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 32),
+          if (monthlyIncome > 0) ...[
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                color: colorScheme.onPrimary.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.savings_outlined,
+                    size: 14,
+                    color: colorScheme.onPrimary.withValues(alpha: 0.85),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Aylık Gelir: ₺${CurrencyFormatter.format(monthlyIncome)}',
+                    style: TextStyle(
+                      color: colorScheme.onPrimary.withValues(alpha: 0.9),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 28),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -78,6 +109,12 @@ class SummaryCard extends StatelessWidget {
               ),
             ],
           ),
+          if (monthlyIncome > 0) ...[
+            const SizedBox(height: 16),
+            const Divider(color: Colors.white24, height: 1),
+            const SizedBox(height: 12),
+            _buildSavingsRow(context, colorScheme),
+          ],
         ],
       ),
     );
@@ -119,6 +156,44 @@ class SummaryCard extends StatelessWidget {
               style: TextStyle(
                 color: colorScheme.onPrimary,
                 fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSavingsRow(BuildContext context, ColorScheme colorScheme) {
+    final effectiveIncome = monthlyIncome > 0 ? monthlyIncome : 1.0;
+    final savingsAmount = monthlyIncome - totalExpense;
+    final savingsRate = ((savingsAmount / effectiveIncome) * 100).clamp(-100.0, 100.0);
+    final isSaving = savingsAmount >= 0;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          'Tasarruf',
+          style: TextStyle(
+            color: colorScheme.onPrimary.withValues(alpha: 0.75),
+            fontSize: 13,
+          ),
+        ),
+        Row(
+          children: [
+            Icon(
+              isSaving ? Icons.trending_up : Icons.trending_down,
+              size: 16,
+              color: isSaving ? Colors.greenAccent : Colors.redAccent,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              '₺${CurrencyFormatter.format(savingsAmount.abs())} (${savingsRate.toStringAsFixed(1)}%)',
+              style: TextStyle(
+                color: isSaving ? Colors.greenAccent : Colors.redAccent,
+                fontSize: 13,
                 fontWeight: FontWeight.bold,
               ),
             ),

@@ -74,8 +74,8 @@ class BudgetProgressCard extends StatelessWidget {
                       Text(
                         '%${(progress * 100).toInt()}',
                         style: TextStyle(
-                          color: progress > 0.4 
-                              ? Colors.white 
+                          color: progress > 0.4
+                              ? Colors.white
                               : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                           fontWeight: FontWeight.bold,
                           fontSize: 12,

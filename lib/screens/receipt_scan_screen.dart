@@ -2,20 +2,43 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 import 'package:finans_app/providers/ocr_provider.dart';
+import 'package:finans_app/providers/category_provider.dart';
+import 'package:finans_app/providers/transaction_provider.dart';
+import 'package:finans_app/services/receipt_parser.dart';
+import 'package:finans_app/models/transaction.dart' as models;
+import 'package:finans_app/models/category.dart' as model_cat;
+import 'package:finans_app/utils/currency_formatter.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 
 /// Fiş Tarama Ekranı — OCR ile fiş/fatura tarama
 ///
 /// Akış: Kamera/Galeri → Önizleme → (İsteğe bağlı) Kırpma → OCR Tarama → Sonuç
-class ReceiptScanScreen extends StatelessWidget {
+class ReceiptScanScreen extends StatefulWidget {
   const ReceiptScanScreen({super.key});
 
   @override
+  State<ReceiptScanScreen> createState() => _ReceiptScanScreenState();
+}
+
+class _ReceiptScanScreenState extends State<ReceiptScanScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Ekran açıldığında önceki kamerada kalan veya taranan veriyi sıfırla
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<OcrProvider>().reset();
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => OcrProvider(),
-      child: const _ReceiptScanBody(),
-    );
+    return const _ReceiptScanBody();
   }
 }
 
@@ -282,10 +305,7 @@ class _PreviewView extends StatelessWidget {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(20),
-                child: Image.file(
-                  File(imagePath),
-                  fit: BoxFit.contain,
-                ),
+                child: Image.file(File(imagePath), fit: BoxFit.contain),
               ),
             ),
           ),
@@ -312,10 +332,7 @@ class _PreviewView extends StatelessWidget {
                   icon: const Icon(Icons.text_snippet_rounded),
                   label: const Text(
                     'Metni Tara',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
@@ -340,11 +357,7 @@ class _ProcessingView extends StatefulWidget {
   final ThemeData theme;
   final bool isDark;
 
-  const _ProcessingView({
-    super.key,
-    required this.theme,
-    required this.isDark,
-  });
+  const _ProcessingView({super.key, required this.theme, required this.isDark});
 
   @override
   State<_ProcessingView> createState() => _ProcessingViewState();
@@ -363,9 +376,10 @@ class _ProcessingViewState extends State<_ProcessingView>
       duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
 
-    _pulseAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _pulseAnimation = Tween<double>(
+      begin: 0.8,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -400,8 +414,9 @@ class _ProcessingViewState extends State<_ProcessingView>
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: widget.theme.colorScheme.primary
-                            .withValues(alpha: 0.4),
+                        color: widget.theme.colorScheme.primary.withValues(
+                          alpha: 0.4,
+                        ),
                         blurRadius: 32,
                         offset: const Offset(0, 8),
                       ),
@@ -437,8 +452,9 @@ class _ProcessingViewState extends State<_ProcessingView>
               borderRadius: BorderRadius.circular(8),
               minHeight: 4,
               color: widget.theme.colorScheme.primary,
-              backgroundColor:
-                  widget.theme.colorScheme.primary.withValues(alpha: 0.15),
+              backgroundColor: widget.theme.colorScheme.primary.withValues(
+                alpha: 0.15,
+              ),
             ),
           ),
         ],
@@ -450,7 +466,34 @@ class _ProcessingViewState extends State<_ProcessingView>
 // ═══════════════════════════════════════════════════════════════
 // 4. SONUÇ — OCR Ham Metin Gösterimi
 // ═══════════════════════════════════════════════════════════════
-class _ResultView extends StatelessWidget {
+
+class _ReceiptItemRow {
+  final TextEditingController nameController;
+  final TextEditingController amountController;
+  final TextEditingController quantityController;
+
+  _ReceiptItemRow({
+    required String name,
+    required double amount,
+    double quantity = 1.0,
+  }) : nameController = TextEditingController(text: name),
+       amountController = TextEditingController(
+         text: CurrencyFormatter.format(amount),
+       ),
+       quantityController = TextEditingController(
+         text: quantity == quantity.toInt()
+             ? quantity.toInt().toString()
+             : quantity.toString(),
+       );
+
+  void dispose() {
+    nameController.dispose();
+    amountController.dispose();
+    quantityController.dispose();
+  }
+}
+
+class _ResultView extends StatefulWidget {
   final String rawText;
   final String? imagePath;
   final ThemeData theme;
@@ -467,14 +510,250 @@ class _ResultView extends StatelessWidget {
   });
 
   @override
+  State<_ResultView> createState() => _ResultViewState();
+}
+
+class _ResultViewState extends State<_ResultView> {
+  final _titleController = TextEditingController();
+  final _amountController = TextEditingController();
+  late final _dateController = TextEditingController();
+  DateTime _selectedDate = DateTime.now();
+  int? _selectedCategoryId;
+  final List<_ReceiptItemRow> _itemRows = [];
+  final _formKey = GlobalKey<FormState>();
+
+  bool _showRawText = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _parseReceiptData();
+    // _parseReceiptData() içinde _selectedDate güncel tarihle doldurulmuş olabilir
+    _dateController.text = DateFormat(
+      'dd MMM yyyy, HH:mm',
+    ).format(_selectedDate);
+  }
+
+  void _parseReceiptData() {
+    if (widget.rawText.isEmpty) return;
+
+    // Yaratılan ReceiptParser regex motoru çalıştırarak verileri çıkarır
+    final parsed = ReceiptParser.parse(widget.rawText);
+
+    if (parsed.merchantName != null && parsed.merchantName!.isNotEmpty) {
+      _titleController.text = parsed.merchantName!;
+    } else {
+      _titleController.text = 'Fiş Harcaması';
+    }
+
+    if (parsed.amount != null) {
+      _amountController.text = CurrencyFormatter.format(parsed.amount!);
+    }
+
+    if (parsed.date != null) {
+      _selectedDate = parsed.date!;
+    }
+
+    if (parsed.items != null && parsed.items!.isNotEmpty) {
+      for (var item in parsed.items!) {
+        _itemRows.add(
+          _ReceiptItemRow(
+            name: item.name,
+            amount: item.amount,
+            quantity: item.quantity,
+          ),
+        );
+      }
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _autoCategorize(parsed.merchantName ?? '');
+    });
+  }
+
+  void _autoCategorize(String merchantName) {
+    if (merchantName.isEmpty) return;
+    final catProvider = Provider.of<CategoryProvider>(context, listen: false);
+    final expenseCategories = catProvider.categories
+        .where((c) => c.type == 'gider')
+        .toList();
+    if (expenseCategories.isEmpty) return;
+
+    final lowerName = merchantName.toLowerCase();
+    int? matchedId;
+
+    if (lowerName.contains('market') ||
+        lowerName.contains('migros') ||
+        lowerName.contains('bim') ||
+        lowerName.contains('a101') ||
+        lowerName.contains('şok') ||
+        lowerName.contains('carrefour')) {
+      matchedId = expenseCategories
+          .firstWhere(
+            (c) => c.name.toLowerCase().contains('market'),
+            orElse: () => expenseCategories.first,
+          )
+          .id;
+    } else if (lowerName.contains('kahve') ||
+        lowerName.contains('starbucks') ||
+        lowerName.contains('cafe') ||
+        lowerName.contains('yemek') ||
+        lowerName.contains('burger') ||
+        lowerName.contains('kebap')) {
+      matchedId = expenseCategories
+          .firstWhere(
+            (c) =>
+                c.name.toLowerCase().contains('yemek') ||
+                c.name.toLowerCase().contains('restoran'),
+            orElse: () => expenseCategories.first,
+          )
+          .id;
+    } else if (lowerName.contains('petrol') ||
+        lowerName.contains('shell') ||
+        lowerName.contains('opet') ||
+        lowerName.contains('bp') ||
+        lowerName.contains('yakıt')) {
+      matchedId = expenseCategories
+          .firstWhere(
+            (c) =>
+                c.name.toLowerCase().contains('ulaşım') ||
+                c.name.toLowerCase().contains('yakıt'),
+            orElse: () => expenseCategories.first,
+          )
+          .id;
+    }
+
+    if (matchedId != null) {
+      setState(() => _selectedCategoryId = matchedId);
+    } else {
+      setState(() => _selectedCategoryId = expenseCategories.first.id);
+    }
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _amountController.dispose();
+    _dateController.dispose();
+    for (var row in _itemRows) {
+      row.dispose();
+    }
+    super.dispose();
+  }
+
+  Future<void> _pickDate() async {
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 1)),
+    );
+    if (pickedDate != null && mounted) {
+      final pickedTime = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(_selectedDate),
+      );
+      if (pickedTime != null && mounted) {
+        setState(() {
+          _selectedDate = DateTime(
+            pickedDate.year,
+            pickedDate.month,
+            pickedDate.day,
+            pickedTime.hour,
+            pickedTime.minute,
+          );
+          _dateController.text = DateFormat(
+            'dd MMM yyyy, HH:mm',
+          ).format(_selectedDate);
+        });
+      }
+    }
+  }
+
+  Future<void> _saveTransaction() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final parsed = CurrencyFormatter.parse(_amountController.text);
+    if (parsed == null || parsed <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lütfen geçerli bir tutar girin')),
+      );
+      return;
+    }
+
+    final title = _titleController.text.trim().isEmpty
+        ? 'Fiş Harcaması'
+        : _titleController.text.trim();
+
+    List<models.TransactionItem>? finalItems;
+    if (_itemRows.isNotEmpty) {
+      finalItems = [];
+      for (var row in _itemRows) {
+        final name = row.nameController.text.trim();
+        final amount = CurrencyFormatter.parse(row.amountController.text);
+        final quantity = double.tryParse(row.quantityController.text) ?? 1.0;
+        if (name.isNotEmpty && amount != null && amount > 0) {
+          finalItems.add(
+            models.TransactionItem(
+              name: name,
+              amount: amount,
+              quantity: quantity,
+            ),
+          );
+        }
+      }
+      if (finalItems.isEmpty) finalItems = null;
+    }
+
+    String? receiptPath;
+    if (widget.imagePath != null && widget.imagePath!.isNotEmpty) {
+      try {
+        final appDir = await getApplicationDocumentsDirectory();
+        final fileName =
+            'receipt_${DateTime.now().millisecondsSinceEpoch}${p.extension(widget.imagePath!)}';
+        final savedFile = await File(
+          widget.imagePath!,
+        ).copy('${appDir.path}/$fileName');
+        receiptPath = savedFile.path;
+      } catch (e) {
+        // Hata olursa resimsiz kaydet
+        receiptPath = widget.imagePath;
+      }
+    }
+
+    final tx = models.Transaction(
+      title: title,
+      amount: parsed,
+      type: 'gider',
+      categoryId: _selectedCategoryId!,
+      date: _selectedDate,
+      description: 'Fiş tarama (OCR) ile eklendi.\n---\n${widget.rawText}',
+      items: finalItems,
+      receiptId: receiptPath,
+    );
+
+    Provider.of<TransactionProvider>(context, listen: false).addTransaction(tx);
+
+    widget.onReset();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Fiş başarıyla kaydedildi ✓'),
+        backgroundColor: Colors.green,
+      ),
+    );
+    context.pop();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final bool isEmpty = rawText.isEmpty;
+    final bool isEmpty = widget.rawText.isEmpty;
+    final catProvider = Provider.of<CategoryProvider>(context);
 
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
-          // Üst bilgi
           Row(
             children: [
               Container(
@@ -500,7 +779,7 @@ class _ResultView extends StatelessWidget {
                   children: [
                     Text(
                       isEmpty ? 'Metin Bulunamadı' : 'Tarama Tamamlandı',
-                      style: theme.textTheme.titleMedium?.copyWith(
+                      style: widget.theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -508,50 +787,48 @@ class _ResultView extends StatelessWidget {
                     Text(
                       isEmpty
                           ? 'Fişte okunabilir metin tespit edilemedi'
-                          : 'OCR sonucu aşağıda gösterilmektedir',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                          : 'Bilgileri doğrulayıp kaydedin',
+                      style: widget.theme.textTheme.bodySmall?.copyWith(
+                        color: widget.theme.colorScheme.onSurface.withValues(
+                          alpha: 0.6,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
+              if (!isEmpty)
+                IconButton(
+                  icon: Icon(
+                    _showRawText ? Icons.edit_document : Icons.text_snippet,
+                    color: widget.theme.colorScheme.primary,
+                  ),
+                  tooltip: _showRawText ? 'Formu Göster' : 'Ham Metni Göster',
+                  onPressed: () {
+                    setState(() {
+                      _showRawText = !_showRawText;
+                    });
+                  },
+                ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
-          // Küçük resim önizleme
-          if (imagePath != null)
-            Container(
-              height: 100,
-              width: double.infinity,
-              margin: const EdgeInsets.only(bottom: 16),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                image: DecorationImage(
-                  image: FileImage(File(imagePath!)),
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-
-          // OCR Metin kartı
           Expanded(
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDark
+                color: widget.isDark
                     ? Colors.white.withValues(alpha: 0.05)
                     : Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: isDark
+                  color: widget.isDark
                       ? Colors.white.withValues(alpha: 0.1)
                       : const Color(0xFFE2E8F0),
                 ),
-                boxShadow: isDark
+                boxShadow: widget.isDark
                     ? null
                     : [
                         BoxShadow(
@@ -561,84 +838,41 @@ class _ResultView extends StatelessWidget {
                         ),
                       ],
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.text_snippet_rounded,
-                        size: 18,
-                        color: theme.colorScheme.primary,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Ham OCR Çıktısı',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.primary,
-                        ),
-                      ),
-                      const Spacer(),
-                      if (!isEmpty)
-                        IconButton(
-                          icon: const Icon(Icons.copy_rounded, size: 18),
-                          tooltip: 'Metni Kopyala',
-                          onPressed: () {
-                            // Panoya kopyala
-                            _copyToClipboard(context, rawText);
-                          },
-                        ),
-                    ],
-                  ),
-                  const Divider(height: 24),
-                  Expanded(
-                    child: isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.text_rotation_none,
-                                  size: 48,
-                                  color: theme.colorScheme.onSurface
-                                      .withValues(alpha: 0.2),
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  'Metin tespit edilemedi.\nFarklı bir açıdan tekrar deneyin.',
-                                  textAlign: TextAlign.center,
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: theme.colorScheme.onSurface
-                                        .withValues(alpha: 0.5),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        : SingleChildScrollView(
-                            child: SelectableText(
-                              rawText,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                fontFamily: 'monospace',
-                                height: 1.6,
-                                letterSpacing: 0.3,
-                              ),
+              child: isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.text_rotation_none,
+                            size: 48,
+                            color: widget.theme.colorScheme.onSurface
+                                .withValues(alpha: 0.2),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Metin tespit edilemedi.\\nFarklı bir açıdan tekrar deneyin.',
+                            textAlign: TextAlign.center,
+                            style: widget.theme.textTheme.bodyMedium?.copyWith(
+                              color: widget.theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.5),
                             ),
                           ),
-                  ),
-                ],
-              ),
+                        ],
+                      ),
+                    )
+                  : _showRawText
+                  ? _buildRawTextView()
+                  : _buildFormView(catProvider.categories),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
-          // Alt butonlar
           Row(
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: onReset,
+                  onPressed: widget.onReset,
                   icon: const Icon(Icons.refresh_rounded),
                   label: const Text('Yeniden Tara'),
                   style: OutlinedButton.styleFrom(
@@ -647,11 +881,30 @@ class _ResultView extends StatelessWidget {
                       borderRadius: BorderRadius.circular(14),
                     ),
                     side: BorderSide(
-                      color: theme.colorScheme.primary.withValues(alpha: 0.5),
+                      color: widget.theme.colorScheme.primary.withValues(
+                        alpha: 0.5,
+                      ),
                     ),
                   ),
                 ),
               ),
+              if (!isEmpty && !_showRawText) const SizedBox(width: 12),
+              if (!isEmpty && !_showRawText)
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _saveTransaction,
+                    icon: const Icon(Icons.save_rounded),
+                    label: const Text('Kaydet'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      backgroundColor: const Color(0xFF10B981),
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ),
             ],
           ),
         ],
@@ -659,29 +912,447 @@ class _ResultView extends StatelessWidget {
     );
   }
 
-  void _copyToClipboard(BuildContext context, String text) {
-    // Clipboard API
-    final data = ClipboardData(text: text);
-    Clipboard.setData(data).then((_) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Row(
+  Widget _buildRawTextView() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Ham OCR Çıktısı',
+              style: widget.theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: widget.theme.colorScheme.primary,
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.copy_rounded, size: 18),
+              tooltip: 'Kopyala',
+              onPressed: () {
+                final data = ClipboardData(text: widget.rawText);
+                Clipboard.setData(data).then((_) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Panoya kopyalandı')),
+                    );
+                  }
+                });
+              },
+            ),
+          ],
+        ),
+        const Divider(),
+        Expanded(
+          child: SingleChildScrollView(
+            child: SelectableText(
+              widget.rawText,
+              style: widget.theme.textTheme.bodyMedium?.copyWith(
+                fontFamily: 'monospace',
+                height: 1.6,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFormView(List<model_cat.Category> allCategories) {
+    final expenseCategories = allCategories
+        .where((c) => c.type == 'gider')
+        .toList();
+
+    return SingleChildScrollView(
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                Icon(Icons.check_circle, color: Colors.white, size: 18),
-                SizedBox(width: 8),
-                Text('Metin panoya kopyalandı'),
+                Icon(
+                  Icons.edit_document,
+                  size: 18,
+                  color: widget.theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Fiş Bilgileri',
+                  style: widget.theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: widget.theme.colorScheme.primary,
+                  ),
+                ),
               ],
             ),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _titleController,
+              validator: (val) => (val == null || val.trim().isEmpty)
+                  ? 'Başlık boş olamaz'
+                  : null,
+              decoration: const InputDecoration(
+                labelText: 'İşletme / Başlık',
+                prefixIcon: Icon(Icons.storefront_rounded),
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 12,
+                ),
+              ),
             ),
-            duration: const Duration(seconds: 2),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _amountController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              // Sadece görsel check için validator ekledik
+              decoration: const InputDecoration(
+                labelText: 'Genel Toplam',
+                prefixIcon: Icon(Icons.payments_rounded),
+                border: OutlineInputBorder(),
+                suffixText: '₺',
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 12,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<int>(
+              key: ValueKey(_selectedCategoryId),
+              initialValue: _selectedCategoryId,
+              decoration: const InputDecoration(
+                labelText: 'Kategori',
+                prefixIcon: Icon(Icons.category_rounded),
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 12,
+                ),
+              ),
+              items: expenseCategories.map((c) {
+                return DropdownMenuItem<int>(
+                  value: c.id,
+                  child: Text(c.name, style: const TextStyle(fontSize: 14)),
+                );
+              }).toList(),
+              validator: (val) =>
+                  val == null ? 'Lütfen bir kategori seçin' : null,
+              onChanged: (val) {
+                setState(() {
+                  _selectedCategoryId = val;
+                });
+              },
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              readOnly: true,
+              onTap: _pickDate,
+              controller: _dateController,
+              decoration: InputDecoration(
+                labelText: 'İşlem Tarihi ve Saati',
+                prefixIcon: const Icon(Icons.calendar_today_rounded),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    Icons.edit_calendar_rounded,
+                    color: widget.theme.colorScheme.primary,
+                  ),
+                  tooltip: 'Tarih ve saati düzenle',
+                  onPressed: _pickDate,
+                ),
+                border: const OutlineInputBorder(),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 12,
+                ),
+                helperText: 'Dokunarak tarih ve saati düzenleyebilirsiniz',
+                helperStyle: TextStyle(
+                  fontSize: 11,
+                  color: widget.theme.colorScheme.primary.withValues(
+                    alpha: 0.7,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            if (_itemRows.isNotEmpty) ...[
+              _buildDetailedItemsSection(),
+              const SizedBox(height: 16),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailedItemsSection() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: widget.theme.colorScheme.surfaceContainerHighest.withValues(
+          alpha: 0.3,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: widget.theme.colorScheme.outline.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Okunan Ürün Kalemleri',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: widget.theme.colorScheme.primary,
+                ),
+              ),
+            ],
           ),
-        );
-      }
-    });
+          const SizedBox(height: 12),
+
+          // Kolon Başlıkları
+          if (_itemRows.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(
+                bottom: 6.0,
+                left: 4.0,
+                right: 36.0,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 6,
+                    child: Text(
+                      'Ürün Adı',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: widget.theme.colorScheme.onSurface.withValues(
+                          alpha: 0.6,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 1),
+                  Expanded(
+                    flex: 3,
+                    child: Text(
+                      'Ad./Kg',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: widget.theme.colorScheme.onSurface.withValues(
+                          alpha: 0.6,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 1),
+                  Expanded(
+                    flex: 3,
+                    child: Text(
+                      'Brm. ₺',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: widget.theme.colorScheme.onSurface.withValues(
+                          alpha: 0.6,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 1),
+                  Expanded(
+                    flex: 3,
+                    child: Text(
+                      'Tutar',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: widget.theme.colorScheme.onSurface.withValues(
+                          alpha: 0.6,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          ..._itemRows.asMap().entries.map((entry) {
+            int index = entry.key;
+            var row = entry.value;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8.0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    flex: 6,
+                    child: TextFormField(
+                      controller: row.nameController,
+                      style: const TextStyle(fontSize: 13),
+                      decoration: const InputDecoration(
+                        hintText: 'Satır Adı',
+                        isDense: true,
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 12,
+                        ),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    flex: 2,
+                    child: TextFormField(
+                      controller: row.quantityController,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      style: const TextStyle(fontSize: 13),
+                      onChanged: (val) {
+                        setState(() {}); // Birim fiyatın hesaplanması için
+                      },
+                      decoration: const InputDecoration(
+                        hintText: 'Adet',
+                        isDense: true,
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 12,
+                        ),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    flex: 3,
+                    child: Builder(
+                      builder: (context) {
+                        double q =
+                            double.tryParse(row.quantityController.text) ?? 1.0;
+                        double a =
+                            CurrencyFormatter.parse(
+                              row.amountController.text,
+                            ) ??
+                            0.0;
+                        String uPrice = (q > 0)
+                            ? CurrencyFormatter.format(a / q)
+                            : '0,00';
+                        return TextFormField(
+                          controller: TextEditingController(text: uPrice),
+                          readOnly: true,
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: widget
+                                .theme
+                                .colorScheme
+                                .surfaceContainerHighest
+                                .withValues(alpha: 0.5),
+                            isDense: true,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 4,
+                              vertical: 12,
+                            ),
+                            border: const OutlineInputBorder(),
+                          ),
+                          style: TextStyle(
+                            color: widget.theme.colorScheme.onSurface
+                                .withValues(alpha: 0.6),
+                            fontSize: 13,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    flex: 3,
+                    child: TextFormField(
+                      controller: row.amountController,
+                      style: const TextStyle(fontSize: 13),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      inputFormatters: [CurrencyInputFormatter()],
+                      onChanged: (val) {
+                        double sum = 0;
+                        for (var r in _itemRows) {
+                          sum +=
+                              (CurrencyFormatter.parse(
+                                r.amountController.text,
+                              ) ??
+                              0);
+                        }
+                        setState(() {
+                          _amountController.text = CurrencyFormatter.format(
+                            sum,
+                          );
+                        });
+                      },
+                      decoration: const InputDecoration(
+                        hintText: 'Tutar',
+                        isDense: true,
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 12,
+                        ),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Padding(
+                    padding: EdgeInsets.zero,
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.delete_outline,
+                        color: Colors.red,
+                        size: 22,
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 32,
+                        minHeight: 32,
+                      ),
+                      tooltip: 'Satırı Sil',
+                      onPressed: () {
+                        setState(() {
+                          row.dispose();
+                          _itemRows.removeAt(index);
+                          double sum = 0;
+                          for (var r in _itemRows) {
+                            sum +=
+                                (CurrencyFormatter.parse(
+                                  r.amountController.text,
+                                ) ??
+                                0);
+                          }
+                          if (_itemRows.isNotEmpty) {
+                            _amountController.text = CurrencyFormatter.format(
+                              sum,
+                            );
+                          }
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
   }
 }
 
@@ -745,8 +1416,10 @@ class _ErrorView extends StatelessWidget {
               icon: const Icon(Icons.refresh),
               label: const Text('Tekrar Dene'),
               style: ElevatedButton.styleFrom(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 14,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
@@ -792,9 +1465,7 @@ class _ActionButton extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
           decoration: BoxDecoration(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.06)
-                : Colors.white,
+            color: isDark ? Colors.white.withValues(alpha: 0.06) : Colors.white,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: isDark
@@ -839,10 +1510,9 @@ class _ActionButton extends StatelessWidget {
                       subtitle,
                       style: TextStyle(
                         fontSize: 13,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withValues(alpha: 0.5),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.5),
                       ),
                     ),
                   ],
@@ -850,8 +1520,9 @@ class _ActionButton extends StatelessWidget {
               ),
               Icon(
                 Icons.arrow_forward_ios_rounded,
-                color:
-                    Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.3),
                 size: 18,
               ),
             ],

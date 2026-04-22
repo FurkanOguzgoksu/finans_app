@@ -25,13 +25,45 @@ class OcrService {
         return '';
       }
 
-      // Tüm blokları satır satır birleştir
-      final buffer = StringBuffer();
+      // Tüm satırları serbest bir havuza çıkar
+      final List<TextLine> allLines = [];
       for (final block in recognizedText.blocks) {
-        for (final line in block.lines) {
-          buffer.writeln(line.text);
+        allLines.addAll(block.lines);
+      }
+
+      // Yukarıdan aşağıya (Y eksenine) göre sırala
+      allLines.sort((a, b) => a.boundingBox.top.compareTo(b.boundingBox.top));
+
+      final buffer = StringBuffer();
+      List<TextLine> currentRow = [];
+      
+      // Aynı satır sayılması için sapma payı (px). 
+      // Çok yüksek değerler satırların birleşmesine (Adres + Marka) neden olur.
+      const double yTolerance = 18.0; 
+
+      for (final line in allLines) {
+        if (currentRow.isEmpty) {
+          currentRow.add(line);
+        } else {
+          // Mevcut satırın başlangıcı ile karşılaştır
+          final diff = (line.boundingBox.top - currentRow.first.boundingBox.top).abs();
+          if (diff <= yTolerance) {
+            // Aynı yatay hizada sayılır
+            currentRow.add(line);
+          } else {
+            // Y hizası bitti, mevcut satırı Soldan Sağa sıralayıp yaz
+            currentRow.sort((a, b) => a.boundingBox.left.compareTo(b.boundingBox.left));
+            buffer.writeln(currentRow.map((e) => e.text).join('   '));
+            // Yeni satıra başla
+            currentRow = [line];
+          }
         }
-        buffer.writeln(); // Bloklar arası boşluk
+      }
+
+      // Kalan son satırı da yaz
+      if (currentRow.isNotEmpty) {
+        currentRow.sort((a, b) => a.boundingBox.left.compareTo(b.boundingBox.left));
+        buffer.writeln(currentRow.map((e) => e.text).join('   '));
       }
 
       return buffer.toString().trim();

@@ -38,9 +38,6 @@ class OcrProvider extends ChangeNotifier {
 
   // ─── Kameradan Fotoğraf Çek ────────────────────────
   Future<void> pickFromCamera() async {
-    final hasPermission = await _checkCameraPermission();
-    if (!hasPermission) return;
-
     _setState(OcrState.picking);
     try {
       final XFile? photo = await _picker.pickImage(
@@ -65,9 +62,6 @@ class OcrProvider extends ChangeNotifier {
 
   // ─── Galeriden Fotoğraf Seç ────────────────────────
   Future<void> pickFromGallery() async {
-    final hasPermission = await _checkGalleryPermission();
-    if (!hasPermission) return;
-
     _setState(OcrState.picking);
     try {
       final XFile? image = await _picker.pickImage(

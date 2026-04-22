@@ -150,12 +150,12 @@
 
 | # | Görev | Durum | Notlar |
 |---|-------|-------|--------|
-| 1 | RegEx desenleri (Toplam, Tutar, Ödenecek vb.) | ⬜ Bekliyor | |
-| 2 | Tarih ve İşletme adı ayrıştırma | ⬜ Bekliyor | |
-| 3 | En yüksek tutarı seçme mantığı | ⬜ Bekliyor | |
-| 4 | Gerçek fiş örnekleriyle RegEx testleri | ⬜ Bekliyor | |
+| 1 | RegEx desenleri (Toplam, Tutar, Ödenecek vb.) | ✅ Tamamlandı | priceRegExp ve targetKeywords eklendi |
+| 2 | Tarih ve İşletme adı ayrıştırma | ✅ Tamamlandı | dateRegExp ve MerchantName extraction (ilk anlamlı satır) algoritması devrede |
+| 3 | En yüksek tutarı seçme mantığı | ✅ Tamamlandı | Standart RegEx uyuşmadığında (Fallback) en makul değeri yakalıyor |
+| 4 | Gerçek fiş örnekleriyle RegEx testleri | ✅ Tamamlandı | receipt_parser_test.dart (Market, Restoran, Kötü taranmış vs.) eklendi ve tüm senaryolar sağlandı |
 
-**Çıktı:** ⬜ Tutar, tarih ve işletme adı otomatik ayrıştırılıyor.
+**Çıktı:** ✅ Tutar, tarih ve işletme adı otomatik ayrıştırılıyor.
 
 ---
 
@@ -163,12 +163,12 @@
 
 | # | Görev | Durum | Notlar |
 |---|-------|-------|--------|
-| 1 | Fiş tarama ekranı arayüzü | ⬜ Bekliyor | |
-| 2 | OCR sonuçlarının onay ekranında gösterilmesi ve düzenleme modu | ⬜ Bekliyor | |
-| 3 | Kategori otomatik önerisi | ⬜ Bekliyor | |
-| 4 | Onaylanan harcamanın veritabanına kaydedilmesi | ⬜ Bekliyor | |
+| 1 | Fiş tarama ekranı arayüzü | ✅ Tamamlandı | StatefulWidget ve Tab formatında _ResultView baştan yazıldı |
+| 2 | OCR sonuçlarının onay ekranında gösterilmesi ve düzenleme modu | ✅ Tamamlandı | Form oluşturuldu, ReceiptParser verileri ile TextController'lara entegrasyon sağlandı |
+| 3 | Kategori otomatik önerisi | ✅ Tamamlandı | İşletme ismi içerisinde (market, petrol vb.) kelime analiziyle harcama kategorisini eşleyen algoritma eklendi |
+| 4 | Onaylanan harcamanın veritabanına kaydedilmesi | ✅ Tamamlandı | TransactionProvider ile SQLlite sistemine kaydediliyor |
 
-**Çıktı:** ⬜ Uçtan uca fiş tarama akışı tamamlandı.
+**Çıktı:** ✅ Uçtan uca fiş tarama akışı tamamlandı.
 
 ---
 
@@ -258,6 +258,8 @@ Durum Emojileri:
 
 ## 📝 Geçmiş Hafta Notları
 
+- **Hafta 10 Kapanış Notları:** Tüm görevler başarıyla uygulandı. `receipt_scan_screen.dart` üzerine büyük bir entegrasyon gerçekleştirildi. `_ResultView` ekranı StatefulWidget'a çevrilerek gelişmiş bir onay panosuna kavuştu. Sistem önce OCR sonucu okunan parçaları Hafta 9 mimarisiyle çözümlüyor, elde edilen tutar ve tarihleri form paneline otomatik yazdırıyor. Özel `_autoCategorize` yeteneği sayesinde marka adı üzerinden zeki kategori tahmini yapılıyor (Starbucks ➔ Yemek, BP ➔ Ulaşım gibi). Tamamlanan form `TransactionProvider` ile Database'ye sorunsuzca "Gider" olarak aktarılmaktadır.
+- **Hafta 9 Kapanış Notları:** Tüm görevler yürütüldü. `lib/models/parsed_receipt.dart` dosyası oluşturularak ayrıştırılmış ocr verisi `ParsedReceipt` modeliyle yapılandırıldı. `lib/services/receipt_parser.dart` oluşturularak "TOPLAM", "ODENEN", "KREDI KARTI" anahtar kelimelerini tanıyıp Türk fişlerindeki Tutar ve Tarihi ayıklayan `parse(String)` RegExp motoru geliştirildi. Eğer direkt bir match bulamazsa en büyük rakamı fiyat olarak alma (fallback) fonksiyonelliği eklendi. `receipt_parser_test.dart` üzerinde yazılan unit testler başarıyla çalışıyor.
 - **Hafta 8 Kapanış Notları:** Tüm planlı görevler tamamlandı. `OcrService` (lib/services/ocr_service.dart) Google ML Kit `TextRecognizer` ile on-device metin tanıma sağlıyor. `OcrProvider` (lib/providers/ocr_provider.dart) enum-tabanlı state machine ile tam akış yönetimi: idle→picking→cropping→processing→done/error. `ReceiptScanScreen` 5 farklı görünüm ile premium UI: gradient arka plan, glassmorphism kartlar, AnimatedSwitcher geçişleri, pulse animasyonu, SelectableText ile metin seçimi ve panoya kopyalama. `image_cropper` dikdörtgen kırpma ile ön işleme. `OcrException` özel hata sınıfı ile kapsamlı error handling. **Not:** google_mlkit_text_recognition sadece Android/iOS destekler, Windows/Web'de çalışmaz.
 - **Hafta 7 Kapanış Notları:** Tüm planlı görevler tamamlandı. Ek olarak: Profil fotoğrafında `permission_handler` ile Android izin sistemi (kamera/galeri/kalıcı red yönetimi), `CropStyle.circle` ile yuvarlak kırpma, `InteractiveViewer` ile pinch-to-zoom ekranı, `UCropTheme` ile Android native status bar taşma sorunu düzeldi. `SystemChrome.setSystemUIOverlayStyle` ile tüm uygulamada karanlık/aydınlık moda göre status bar/nav bar rengi otomatik dönüşüyor. Ayarlar ekranında profil avatarinin görünmemesine yol açan `NetworkImage` → `FileImage` bug'u düzeltildi.
 - **Hafta 6 Bildirimi:** Veritabanında (SQLite) sürüm 1'den kalma tabloların boş olması sebebiyle gizli çökmeler yaşanıyordu. SQLite `version: 2`'ye güncellenerek Migration senaryosu uygulandı. Ayrıca uygulamanın yeni yolu (`2.Dönem/finans_app`) ayarlandı. İşlem Ekleme menüsü Kamera/PDF seçenekleriyle zenginleştirildi.

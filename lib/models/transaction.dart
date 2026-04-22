@@ -1,23 +1,29 @@
 import 'dart:convert';
 
-/// Fiş/Fatura Kalemi (Alt İşlem) modeli
 class TransactionItem {
   final String name;
   final double amount;
+  final double quantity;
 
-  TransactionItem({required this.name, required this.amount});
+  TransactionItem({
+    required this.name, 
+    required this.amount, 
+    this.quantity = 1.0,
+  });
 
   Map<String, dynamic> toMap() {
     return {
       'name': name,
       'amount': amount,
+      'quantity': quantity,
     };
   }
 
   factory TransactionItem.fromMap(Map<String, dynamic> map) {
     return TransactionItem(
-      name: map['name'] as String,
-      amount: (map['amount'] as num).toDouble(),
+      name: map['name'] ?? '',
+      amount: (map['amount'] as num?)?.toDouble() ?? 0.0,
+      quantity: (map['quantity'] as num?)?.toDouble() ?? 1.0,
     );
   }
 }
