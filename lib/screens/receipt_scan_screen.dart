@@ -732,6 +732,8 @@ class _ResultViewState extends State<_ResultView> {
       receiptId: receiptPath,
     );
 
+    if (!mounted) return;
+
     Provider.of<TransactionProvider>(context, listen: false).addTransaction(tx);
 
     widget.onReset();

@@ -36,11 +36,17 @@ class ReceiptParser {
         
         if (isBim || isA101 || isSok || isMigros || knownBrands.any((b) => upper.contains(b))) {
             String foundBrand = '';
-            if (isBim) foundBrand = 'BIM';
-            else if (isA101) foundBrand = 'A101';
-            else if (isSok) foundBrand = 'SOK';
-            else if (isMigros) foundBrand = 'MIGROS';
-            else foundBrand = knownBrands.firstWhere((b) => upper.contains(b));
+            if (isBim) {
+              foundBrand = 'BIM';
+            } else if (isA101) {
+              foundBrand = 'A101';
+            } else if (isSok) {
+              foundBrand = 'SOK';
+            } else if (isMigros) {
+              foundBrand = 'MIGROS';
+            } else {
+              foundBrand = knownBrands.firstWhere((b) => upper.contains(b));
+            }
 
             // Markayı bulduğumuz satırın başındaki çöpleri (adres vs.) temizle
             int brandStart = upper.indexOf(foundBrand);
@@ -83,7 +89,7 @@ class ReceiptParser {
              int idx = upName.indexOf(kw);
              // Orijinal metinden o indekse kadar olan kısmı al
              if (idx > 0) {
-                merchantName = merchantName!.substring(0, idx).trim();
+                merchantName = merchantName.substring(0, idx).trim();
              }
           }
       }
@@ -93,10 +99,10 @@ class ReceiptParser {
       
       // En sonda kalan gereksiz noktalama işaretlerini (virgül, iki nokta, tire vb.) sil
       // (Noktayı sildirmedik ki A.Ş. veya LTD. ŞTİ. bozulmasın)
-      merchantName = merchantName!.replaceAll(RegExp(r'[,\-:;\s]+$'), '');
+      merchantName = merchantName.replaceAll(RegExp(r'[,\-:;\s]+$'), '');
     }
     
-    if (merchantName != null && merchantName!.length < 2) merchantName = null;
+    if (merchantName != null && merchantName.length < 2) merchantName = null;
 
     // 2. Tarih ve Saat Bulma
     final dateRegExp = RegExp(r'(\d{2})[./-](\d{2})[./-](\d{4}|\d{2})');

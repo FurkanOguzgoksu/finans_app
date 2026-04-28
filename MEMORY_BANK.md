@@ -178,11 +178,11 @@
 
 | # | Görev | Durum | Notlar |
 |---|-------|-------|--------|
-| 1 | fl_chart ile kategori pasta grafiği | ⬜ Bekliyor | |
-| 2 | Son 6 ay gelir-gider bar grafiği ve Ay seçici | ⬜ Bekliyor | |
-| 3 | Grafik etkileşimleri ve boş veri mesajları | ⬜ Bekliyor | |
+| 1 | fl_chart ile kategori pasta grafiği | ✅ Tamamlandı | İstatistik ekranında gider kırılımı |
+| 2 | Son 6 ay gelir-gider bar grafiği ve Ay seçici | ✅ Tamamlandı | Dinamik tarih seçimi eklendi |
+| 3 | Grafik etkileşimleri ve boş veri mesajları | ✅ Tamamlandı | TouchEvents ve Empty State gösterimleri eklendi |
 
-**Çıktı:** ⬜ Kategori pasta grafiği ve aylık grafikler çalışıyor.
+**Çıktı:** ✅ Kategori pasta grafiği ve aylık grafikler çalışıyor.
 
 > 🎥 **NOT: 04 Mayıs – 08 Mayıs 2026 tarihleri arasında video çekimi yapılacaktır.**
 

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:permission_handler/permission_handler.dart';
+
 import 'package:finans_app/services/ocr_service.dart';
 
 /// OCR durumlarını temsil eden enum
@@ -40,6 +41,10 @@ class OcrProvider extends ChangeNotifier {
   Future<void> pickFromCamera() async {
     _setState(OcrState.picking);
     try {
+      if (!await _checkCameraPermission()) {
+        _setState(OcrState.idle);
+        return;
+      }
       final XFile? photo = await _picker.pickImage(
         source: ImageSource.camera,
         imageQuality: 90,
@@ -64,6 +69,10 @@ class OcrProvider extends ChangeNotifier {
   Future<void> pickFromGallery() async {
     _setState(OcrState.picking);
     try {
+      if (!await _checkGalleryPermission()) {
+        _setState(OcrState.idle);
+        return;
+      }
       final XFile? image = await _picker.pickImage(
         source: ImageSource.gallery,
         imageQuality: 90,
@@ -178,6 +187,8 @@ class OcrProvider extends ChangeNotifier {
     _setState(OcrState.error);
   }
 
+
+
   /// Kamera izni kontrolü
   Future<bool> _checkCameraPermission() async {
     var status = await Permission.camera.status;
@@ -200,7 +211,6 @@ class OcrProvider extends ChangeNotifier {
   Future<bool> _checkGalleryPermission() async {
     PermissionStatus status;
     if (Platform.isAndroid) {
-      // Android 13+ (API 33+) için farklı izinler gerekebilir
       status = await Permission.photos.status;
       if (!status.isGranted && !status.isLimited) {
         status = await Permission.photos.request();

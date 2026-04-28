@@ -656,8 +656,8 @@ class _MonthlyIncomeDialogState extends State<_MonthlyIncomeDialog> {
             Flexible(
               child: Text(
                 _addAsTransaction
-                    ? 'Aylık gelir kaydedildi ve işlem eklendi ✓ (Her ayın ${dayLabel}. günü otomatik eklenecek)'
-                    : 'Aylık gelir kaydedildi ✓ (Her ayın ${dayLabel}. günü otomatik eklenecek)',
+                    ? 'Aylık gelir kaydedildi ve işlem eklendi ✓ (Her ayın $dayLabel. günü otomatik eklenecek)'
+                    : 'Aylık gelir kaydedildi ✓ (Her ayın $dayLabel. günü otomatik eklenecek)',
               ),
             ),
           ],
@@ -723,7 +723,7 @@ class _MonthlyIncomeDialogState extends State<_MonthlyIncomeDialog> {
             if (_addAsTransaction) ...[
               const SizedBox(height: 4),
               DropdownButtonFormField<int>(
-                value: _selectedCategoryId,
+                initialValue: _selectedCategoryId,
                 decoration: const InputDecoration(
                   labelText: 'Kategori',
                   border: OutlineInputBorder(),
@@ -850,7 +850,7 @@ class _MonthlyIncomeDialogState extends State<_MonthlyIncomeDialog> {
               ),
               dense: true,
               contentPadding: EdgeInsets.zero,
-              activeColor: theme.colorScheme.primary,
+              activeThumbColor: theme.colorScheme.primary,
             ),
 
             const SizedBox(height: 24),
