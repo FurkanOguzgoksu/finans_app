@@ -54,6 +54,10 @@ dependencies:
   # State Management
   provider: ^6.1.2
 
+  # PDF İşleme
+  file_picker: ^8.1.7
+  syncfusion_flutter_pdf: ^28.2.5
+
   # Yardımcı Paketler
   intl: ^0.20.2
   shared_preferences: ^2.3.5

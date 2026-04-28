@@ -127,6 +127,8 @@ class _ReceiptScanBody extends StatelessWidget {
         key: const ValueKey('result'),
         rawText: provider.rawText ?? '',
         imagePath: provider.imagePath,
+        isPdf: provider.isPdf,
+        pdfPath: provider.pdfPath,
         theme: theme,
         isDark: isDark,
         onReset: provider.reset,
@@ -496,6 +498,8 @@ class _ReceiptItemRow {
 class _ResultView extends StatefulWidget {
   final String rawText;
   final String? imagePath;
+  final bool isPdf;
+  final String? pdfPath;
   final ThemeData theme;
   final bool isDark;
   final VoidCallback onReset;
@@ -504,6 +508,8 @@ class _ResultView extends StatefulWidget {
     super.key,
     required this.rawText,
     required this.imagePath,
+    this.isPdf = false,
+    this.pdfPath,
     required this.theme,
     required this.isDark,
     required this.onReset,
@@ -706,20 +712,26 @@ class _ResultViewState extends State<_ResultView> {
     }
 
     String? receiptPath;
-    if (widget.imagePath != null && widget.imagePath!.isNotEmpty) {
+    // PDF veya resim kaynağını kaydet
+    final sourcePath = widget.isPdf ? widget.pdfPath : widget.imagePath;
+    if (sourcePath != null && sourcePath.isNotEmpty) {
       try {
         final appDir = await getApplicationDocumentsDirectory();
         final fileName =
-            'receipt_${DateTime.now().millisecondsSinceEpoch}${p.extension(widget.imagePath!)}';
+            'receipt_${DateTime.now().millisecondsSinceEpoch}${p.extension(sourcePath)}';
         final savedFile = await File(
-          widget.imagePath!,
+          sourcePath,
         ).copy('${appDir.path}/$fileName');
         receiptPath = savedFile.path;
       } catch (e) {
-        // Hata olursa resimsiz kaydet
-        receiptPath = widget.imagePath;
+        // Hata olursa kaynaksız kaydet
+        receiptPath = sourcePath;
       }
     }
+
+    final description = widget.isPdf
+        ? 'PDF fatura ile eklendi.\n---\n${widget.rawText}'
+        : 'Fiş tarama (OCR) ile eklendi.\n---\n${widget.rawText}';
 
     final tx = models.Transaction(
       title: title,
@@ -727,7 +739,7 @@ class _ResultViewState extends State<_ResultView> {
       type: 'gider',
       categoryId: _selectedCategoryId!,
       date: _selectedDate,
-      description: 'Fiş tarama (OCR) ile eklendi.\n---\n${widget.rawText}',
+      description: description,
       items: finalItems,
       receiptId: receiptPath,
     );
@@ -739,8 +751,8 @@ class _ResultViewState extends State<_ResultView> {
     widget.onReset();
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Fiş başarıyla kaydedildi ✓'),
+      SnackBar(
+        content: Text(widget.isPdf ? 'PDF fatura başarıyla kaydedildi ✓' : 'Fiş başarıyla kaydedildi ✓'),
         backgroundColor: Colors.green,
       ),
     );
@@ -780,7 +792,11 @@ class _ResultViewState extends State<_ResultView> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isEmpty ? 'Metin Bulunamadı' : 'Tarama Tamamlandı',
+                      isEmpty
+                          ? 'Metin Bulunamadı'
+                          : widget.isPdf
+                              ? 'PDF Başarıyla Okundu'
+                              : 'Tarama Tamamlandı',
                       style: widget.theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -788,7 +804,9 @@ class _ResultViewState extends State<_ResultView> {
                     const SizedBox(height: 2),
                     Text(
                       isEmpty
-                          ? 'Fişte okunabilir metin tespit edilemedi'
+                          ? widget.isPdf
+                              ? 'PDF belgede okunabilir metin tespit edilemedi'
+                              : 'Fişte okunabilir metin tespit edilemedi'
                           : 'Bilgileri doğrulayıp kaydedin',
                       style: widget.theme.textTheme.bodySmall?.copyWith(
                         color: widget.theme.colorScheme.onSurface.withValues(

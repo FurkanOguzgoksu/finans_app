@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:syncfusion_flutter_pdf/pdf.dart';
 
 import 'package:finans_app/services/ocr_service.dart';
 
@@ -26,15 +28,18 @@ class OcrProvider extends ChangeNotifier {
   // ─── State ─────────────────────────────────────────
   OcrState _state = OcrState.idle;
   String? _imagePath;
+  String? _pdfPath;
   String? _rawText;
   String? _errorMessage;
 
   // ─── Getters ───────────────────────────────────────
   OcrState get state => _state;
   String? get imagePath => _imagePath;
+  String? get pdfPath => _pdfPath;
   String? get rawText => _rawText;
   String? get errorMessage => _errorMessage;
   bool get hasImage => _imagePath != null;
+  bool get isPdf => _pdfPath != null;
   bool get hasResult => _rawText != null && _rawText!.isNotEmpty;
 
   // ─── Kameradan Fotoğraf Çek ────────────────────────
@@ -89,6 +94,47 @@ class OcrProvider extends ChangeNotifier {
       }
     } catch (e) {
       _setError('Galeri erişiminde hata: $e');
+    }
+  }
+
+  // ─── PDF Dosyasından Metin Çıkarma ────────────────
+  Future<void> pickFromPdf() async {
+    _setState(OcrState.picking);
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+        allowMultiple: false,
+      );
+
+      if (result == null || result.files.isEmpty || result.files.single.path == null) {
+        _setState(OcrState.idle);
+        return;
+      }
+
+      final filePath = result.files.single.path!;
+      _pdfPath = filePath;
+      _imagePath = null;
+
+      _setState(OcrState.processing);
+
+      final file = File(filePath);
+      final bytes = await file.readAsBytes();
+      final PdfDocument document = PdfDocument(inputBytes: bytes);
+      final String extractedText = PdfTextExtractor(document).extractText();
+      document.dispose();
+
+      if (extractedText.trim().isEmpty) {
+        _rawText = '';
+        _errorMessage = null;
+        _setState(OcrState.done);
+      } else {
+        _rawText = extractedText;
+        _errorMessage = null;
+        _setState(OcrState.done);
+      }
+    } catch (e) {
+      _setError('PDF işlenirken hata: $e');
     }
   }
 
@@ -171,6 +217,7 @@ class OcrProvider extends ChangeNotifier {
   void reset() {
     _state = OcrState.idle;
     _imagePath = null;
+    _pdfPath = null;
     _rawText = null;
     _errorMessage = null;
     notifyListeners();

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:finans_app/widgets/add_transaction_sheet.dart';
+import 'package:finans_app/providers/ocr_provider.dart';
 
 class TransactionOptionsSheet extends StatelessWidget {
   const TransactionOptionsSheet({super.key});
@@ -87,7 +89,7 @@ class TransactionOptionsSheet extends StatelessWidget {
           ),
           const Divider(),
 
-          // 3. PDF Yükeleme (İleride eklenecek)
+          // 3. PDF Yükleme
           ListTile(
             leading: Container(
               padding: const EdgeInsets.all(12),
@@ -102,13 +104,14 @@ class TransactionOptionsSheet extends StatelessWidget {
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             subtitle: const Text('Dijital faturanızı sisteme aktarın'),
-            onTap: () {
+            onTap: () async {
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('PDF Yükleme özelliği yakında eklenecektir.'),
-                ),
-              );
+              final ocrProvider = context.read<OcrProvider>();
+              ocrProvider.reset();
+              await ocrProvider.pickFromPdf();
+              if (context.mounted && ocrProvider.hasResult) {
+                context.push('/scan');
+              }
             },
           ),
           const SizedBox(height: 16),
