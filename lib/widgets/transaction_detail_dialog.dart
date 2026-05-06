@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:finans_app/models/transaction.dart' as models;
 import 'package:finans_app/models/category.dart' as category_models;
 import 'package:finans_app/providers/transaction_provider.dart';
@@ -129,6 +130,8 @@ class TransactionDetailDialog extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             _buildDetailRow('Kategori', category.name, theme),
+            const SizedBox(height: 12),
+            _buildSourceBadge(theme),
 
             if (transaction.items != null && transaction.items!.isNotEmpty) ...[
               const SizedBox(height: 16),
@@ -197,125 +200,131 @@ class TransactionDetailDialog extends StatelessWidget {
               const Divider(),
             ],
 
-            if (transaction.description != null &&
-                transaction.description!.isNotEmpty) ...[
+            // PDF / Fiş Görüntüleyici (Açıklamanın üstünde)
+            if (transaction.receiptId != null) ...[
               const SizedBox(height: 16),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'Açıklama / Notlar',
-                    style: TextStyle(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  if (transaction.description!.contains('Fiş tarama (OCR)')) ...[
-                    Theme(
-                      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-                      child: ExpansionTile(
-                        tilePadding: EdgeInsets.zero,
-                        title: Text(
-                          'Fiş OCR Metnini Göster',
-                          style: TextStyle(
-                            color: theme.colorScheme.primary,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
+              Builder(
+                builder: (context) {
+                  final isPdf = transaction.receiptId!.toLowerCase().endsWith('.pdf');
+                  return InkWell(
+                    onTap: () {
+                      if (isPdf) {
+                        OpenFilex.open(transaction.receiptId!);
+                      } else {
+                        showDialog(
+                          context: context,
+                          builder: (_) => Dialog(
+                            insetPadding: const EdgeInsets.all(16),
+                            clipBehavior: Clip.hardEdge,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            child: Stack(
+                              children: [
+                                InteractiveViewer(
+                                  minScale: 1.0,
+                                  maxScale: 4.0,
+                                  child: Image.file(
+                                    File(transaction.receiptId!),
+                                    width: double.infinity,
+                                    fit: BoxFit.contain,
+                                  ),
+                                ),
+                                Positioned(
+                                  right: 8, top: 8,
+                                  child: IconButton(
+                                    icon: const Icon(Icons.close, color: Colors.white),
+                                    style: IconButton.styleFrom(backgroundColor: Colors.black54),
+                                    onPressed: () => Navigator.pop(context),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
+                        );
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: isPdf
+                            ? Colors.purple.withValues(alpha: 0.1)
+                            : theme.colorScheme.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isPdf
+                              ? Colors.purple.withValues(alpha: 0.2)
+                              : theme.colorScheme.primary.withValues(alpha: 0.2),
                         ),
+                      ),
+                      child: Row(
                         children: [
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                          Icon(
+                            isPdf ? Icons.picture_as_pdf : Icons.image_outlined,
+                            color: isPdf ? Colors.purple : theme.colorScheme.primary,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
                             child: Text(
-                              transaction.description!,
-                              style: const TextStyle(fontSize: 13),
+                              isPdf ? 'PDF Faturayı Aç' : 'Taranmış Fiş Fotoğrafını Gör',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: isPdf ? Colors.purple : theme.colorScheme.primary,
+                              ),
                             ),
+                          ),
+                          Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            size: 16,
+                            color: isPdf
+                                ? Colors.purple.withValues(alpha: 0.5)
+                                : theme.colorScheme.primary.withValues(alpha: 0.5),
                           ),
                         ],
                       ),
                     ),
-                  ] else ...[
+                  );
+                },
+              ),
+            ],
+
+            // Açıklama / Notlar (Açılır-Kapanır)
+            if (transaction.description != null &&
+                transaction.description!.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Theme(
+                data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                child: ExpansionTile(
+                  tilePadding: const EdgeInsets.symmetric(horizontal: 4),
+                  childrenPadding: const EdgeInsets.only(bottom: 8),
+                  leading: Icon(
+                    Icons.description_outlined,
+                    size: 20,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
+                  title: Text(
+                    'Açıklama / Notlar',
+                    style: TextStyle(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                  children: [
                     Container(
+                      width: double.infinity,
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerHighest
-                            .withValues(alpha: 0.3),
+                        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         transaction.description!,
-                        style: const TextStyle(fontSize: 15),
+                        style: const TextStyle(fontSize: 13),
                       ),
                     ),
                   ],
-                ],
-              ),
-              
-            if (transaction.receiptId != null) ...[
-              const SizedBox(height: 16),
-              InkWell(
-                onTap: () {
-                   showDialog(
-                     context: context, 
-                     builder: (_) => Dialog(
-                        insetPadding: const EdgeInsets.all(16),
-                        clipBehavior: Clip.hardEdge,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        child: Stack(
-                           children: [
-                             InteractiveViewer(
-                               minScale: 1.0,
-                               maxScale: 4.0,
-                               child: Image.file(
-                                 File(transaction.receiptId!),
-                                 width: double.infinity,
-                                 fit: BoxFit.contain,
-                               ),
-                             ),
-                             Positioned(
-                               right: 8, top: 8,
-                               child: IconButton(
-                                 icon: const Icon(Icons.close, color: Colors.white),
-                                 style: IconButton.styleFrom(backgroundColor: Colors.black54),
-                                 onPressed: () => Navigator.pop(context),
-                               )
-                             )
-                           ]
-                        )
-                     )
-                   );
-                },
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.2)),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.image_outlined, color: theme.colorScheme.primary),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Taranmış Fiş Fotoğrafını Gör', 
-                          style: TextStyle(fontWeight: FontWeight.w600, color: theme.colorScheme.primary),
-                        ),
-                      ),
-                      Icon(Icons.arrow_forward_ios_rounded, size: 16, color: theme.colorScheme.primary.withValues(alpha: 0.5)),
-                    ],
-                  ),
                 ),
               ),
-            ],
-            
             ],
 
 
@@ -398,6 +407,68 @@ class TransactionDetailDialog extends StatelessWidget {
         Text(
           value,
           style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 16),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSourceBadge(ThemeData theme) {
+    String sourceLabel;
+    IconData sourceIcon;
+    Color sourceColor;
+
+    final desc = transaction.description ?? '';
+
+    if (desc.contains('PDF fatura')) {
+      sourceLabel = 'PDF Fatura';
+      sourceIcon = Icons.picture_as_pdf;
+      sourceColor = Colors.purple;
+    } else if (desc.contains('Fiş tarama (OCR)')) {
+      sourceLabel = 'Kamera (OCR)';
+      sourceIcon = Icons.document_scanner;
+      sourceColor = Colors.orange;
+    } else if (desc.contains('otomatik eklenir') || desc.contains('Aylık gelir')) {
+      sourceLabel = 'Otomatik Gelir';
+      sourceIcon = Icons.repeat;
+      sourceColor = Colors.teal;
+    } else {
+      sourceLabel = 'Manuel Giriş';
+      sourceIcon = Icons.edit_note;
+      sourceColor = theme.colorScheme.primary;
+    }
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          'Eklenme Türü',
+          style: TextStyle(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+            fontSize: 16,
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: sourceColor.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: sourceColor.withValues(alpha: 0.3)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(sourceIcon, size: 14, color: sourceColor),
+              const SizedBox(width: 6),
+              Text(
+                sourceLabel,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: sourceColor,
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );

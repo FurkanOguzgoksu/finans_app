@@ -8,6 +8,8 @@ import 'package:finans_app/providers/ocr_provider.dart';
 import 'package:finans_app/providers/category_provider.dart';
 import 'package:finans_app/providers/transaction_provider.dart';
 import 'package:finans_app/services/receipt_parser.dart';
+import 'package:finans_app/services/invoice_parser.dart';
+import 'package:finans_app/services/ai_parser_service.dart';
 import 'package:finans_app/models/transaction.dart' as models;
 import 'package:finans_app/models/category.dart' as model_cat;
 import 'package:finans_app/utils/currency_formatter.dart';
@@ -29,9 +31,13 @@ class _ReceiptScanScreenState extends State<ReceiptScanScreen> {
   void initState() {
     super.initState();
     // Ekran açıldığında önceki kamerada kalan veya taranan veriyi sıfırla
+    // Ancak PDF'den gelen veriler varsa (state == done) sıfırlama!
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        context.read<OcrProvider>().reset();
+        final provider = context.read<OcrProvider>();
+        if (provider.state != OcrState.done) {
+          provider.reset();
+        }
       }
     });
   }
@@ -529,6 +535,7 @@ class _ResultViewState extends State<_ResultView> {
   final _formKey = GlobalKey<FormState>();
 
   bool _showRawText = false;
+  bool _isParsingWithAI = false;
 
   @override
   void initState() {
@@ -543,8 +550,10 @@ class _ResultViewState extends State<_ResultView> {
   void _parseReceiptData() {
     if (widget.rawText.isEmpty) return;
 
-    // Yaratılan ReceiptParser regex motoru çalıştırarak verileri çıkarır
-    final parsed = ReceiptParser.parse(widget.rawText);
+    // Yaratılan Parser regex motoru çalıştırarak verileri çıkarır
+    final parsed = widget.isPdf 
+        ? InvoiceParser.parse(widget.rawText)
+        : ReceiptParser.parse(widget.rawText);
 
     if (parsed.merchantName != null && parsed.merchantName!.isNotEmpty) {
       _titleController.text = parsed.merchantName!;
@@ -575,6 +584,71 @@ class _ResultViewState extends State<_ResultView> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _autoCategorize(parsed.merchantName ?? '');
     });
+  }
+
+  Future<void> _parseWithAI() async {
+    if (widget.rawText.isEmpty) return;
+
+    setState(() {
+      _isParsingWithAI = true;
+    });
+
+    try {
+      final parsed = await AiParserService.parse(widget.rawText);
+
+      setState(() {
+        if (parsed.merchantName != null && parsed.merchantName!.isNotEmpty) {
+          _titleController.text = parsed.merchantName!;
+        }
+
+        if (parsed.amount != null) {
+          _amountController.text = CurrencyFormatter.format(parsed.amount!);
+        }
+
+        if (parsed.date != null) {
+          _selectedDate = parsed.date!;
+          _dateController.text = DateFormat('dd MMM yyyy, HH:mm').format(_selectedDate);
+        }
+
+        if (parsed.items != null && parsed.items!.isNotEmpty) {
+          // Önceki satırları temizle
+          for (var row in _itemRows) {
+            row.dispose();
+          }
+          _itemRows.clear();
+
+          for (var item in parsed.items!) {
+            _itemRows.add(
+              _ReceiptItemRow(
+                name: item.name,
+                amount: item.amount,
+                quantity: item.quantity,
+              ),
+            );
+          }
+        }
+        
+        _autoCategorize(parsed.merchantName ?? '');
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Yapay zeka ile başarıyla yeniden ayrıştırıldı!')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isParsingWithAI = false;
+        });
+      }
+    }
   }
 
   void _autoCategorize(String merchantName) {
@@ -989,6 +1063,44 @@ class _ResultViewState extends State<_ResultView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (!_isParsingWithAI)
+              Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: _parseWithAI,
+                  icon: const Icon(Icons.auto_awesome, color: Colors.amber),
+                  label: const Text('Yapay Zeka ile Yeniden Ayrıştır'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: widget.theme.colorScheme.primary,
+                    side: BorderSide(color: Colors.amber.withValues(alpha: 0.5)),
+                    backgroundColor: Colors.amber.withValues(alpha: 0.05),
+                  ),
+                ),
+              ),
+            if (_isParsingWithAI)
+              Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Yapay zeka analiz ediyor...',
+                      style: TextStyle(color: widget.theme.colorScheme.primary, fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+              ),
             Row(
               children: [
                 Icon(

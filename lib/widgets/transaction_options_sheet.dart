@@ -20,7 +20,6 @@ class TransactionOptionsSheet extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Drag Handle
           Center(
             child: Container(
               height: 4,
@@ -56,7 +55,7 @@ class TransactionOptionsSheet extends StatelessWidget {
             ),
             subtitle: const Text('Gelir veya gideri elle ekleyin'),
             onTap: () {
-              Navigator.pop(context); // Bu menüyü kapat
+              Navigator.pop(context);
               showModalBottomSheet(
                 context: context,
                 isScrollControlled: true,
@@ -84,7 +83,7 @@ class TransactionOptionsSheet extends StatelessWidget {
             subtitle: const Text('OCR ile fatura bilgilerini otomatik alın'),
             onTap: () {
               Navigator.pop(context);
-              context.push('/scan'); // Yönlendirme go_router ile yapılır
+              context.push('/scan'); 
             },
           ),
           const Divider(),
@@ -105,12 +104,14 @@ class TransactionOptionsSheet extends StatelessWidget {
             ),
             subtitle: const Text('Dijital faturanızı sisteme aktarın'),
             onTap: () async {
-              Navigator.pop(context);
               final ocrProvider = context.read<OcrProvider>();
+              final navigator = Navigator.of(context);
+              final router = GoRouter.of(context);
+              navigator.pop();
               ocrProvider.reset();
               await ocrProvider.pickFromPdf();
-              if (context.mounted && ocrProvider.hasResult) {
-                context.push('/scan');
+              if (ocrProvider.hasResult) {
+                router.push('/scan');
               }
             },
           ),
