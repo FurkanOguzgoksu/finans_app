@@ -13,6 +13,7 @@ import 'providers/category_provider.dart';
 import 'providers/transaction_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/settings_provider.dart';
+import 'providers/auth_provider.dart';
 import 'providers/ocr_provider.dart';
 import 'utils/app_theme.dart';
 
@@ -58,6 +59,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => SettingsProvider()),
         ChangeNotifierProvider(create: (_) => BackupProvider()),
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => OcrProvider()),
         ChangeNotifierProvider(
           create: (_) => CategoryProvider()..loadCategories(),
@@ -86,12 +88,19 @@ class _FinansAppState extends State<FinansApp> {
   @override
   void initState() {
     super.initState();
-    _router = AppRouter.createRouter(widget.showOnboarding);
+    // Router requires AuthProvider to be passed. We'll get it in the build method.
   }
 
   @override
   Widget build(BuildContext context) {
     final themeMode = context.watch<ThemeProvider>().themeMode;
+    final authProvider = context.read<AuthProvider>();
+    
+    // Router'ı burada başlatıyoruz ki authProvider'a erişebilelim
+    // (Bunu her build'de baştan oluşturmamak için genellikle late final olarak
+    // initState içinde context.read ile alıp oluştururuz, ama go_router refreshListenable
+    // ile de dinleyebiliyor).
+    _router = AppRouter.createRouter(widget.showOnboarding, authProvider);
 
     // Sistem temasına göre status bar ikonlarını belirle
     final isDark = themeMode == ThemeMode.dark ||

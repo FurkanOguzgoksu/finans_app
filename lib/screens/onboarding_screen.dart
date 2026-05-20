@@ -37,9 +37,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void _finishOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('has_seen_onboarding', true);
-    if (mounted) {
-      context.go('/'); // Ana sayfaya git
-    }
+    if (!mounted) return;
+    context.go('/login');
   }
 
   @override

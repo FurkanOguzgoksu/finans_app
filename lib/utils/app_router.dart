@@ -9,18 +9,50 @@ import 'package:finans_app/screens/onboarding_screen.dart';
 import 'package:finans_app/screens/backup_settings_screen.dart';
 import 'package:finans_app/screens/category_management_screen.dart';
 import 'package:finans_app/screens/profile_screen.dart';
+import 'package:finans_app/screens/login_screen.dart';
+import 'package:finans_app/screens/register_screen.dart';
+import 'package:finans_app/providers/auth_provider.dart';
 
 /// Uygulama navigasyon yapılandırması (go_router)
 class AppRouter {
-  static GoRouter createRouter(bool showOnboarding) {
+  static GoRouter createRouter(bool showOnboarding, AuthProvider authProvider) {
     return GoRouter(
       initialLocation: showOnboarding ? '/onboarding' : '/',
+      refreshListenable: authProvider,
+      redirect: (context, state) {
+        final isLoggedIn = authProvider.user != null;
+        final isLoggingIn = state.matchedLocation == '/login' || state.matchedLocation == '/register';
+        final isOnboarding = state.matchedLocation == '/onboarding';
+
+        // Eğer onboarding görünecekse, yönlendirmeyi atla
+        if (showOnboarding && isOnboarding) return null;
+
+        if (!isLoggedIn && !isLoggingIn) {
+          return '/login';
+        }
+        if (isLoggedIn && isLoggingIn) {
+          return '/';
+        }
+        return null;
+      },
       routes: [
         // Tanıtım Ekranı
         GoRoute(
           path: '/onboarding',
           name: 'onboarding',
           builder: (context, state) => const OnboardingScreen(),
+        ),
+        // Giriş Ekranı
+        GoRoute(
+          path: '/login',
+          name: 'login',
+          builder: (context, state) => const LoginScreen(),
+        ),
+        // Kayıt Ekranı
+        GoRoute(
+          path: '/register',
+          name: 'register',
+          builder: (context, state) => const RegisterScreen(),
         ),
 
         // Ana sayfa - Shell Route ile bottom navigation
