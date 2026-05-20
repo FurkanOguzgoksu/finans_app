@@ -192,12 +192,12 @@
 
 | # | Görev | Durum | Notlar |
 |---|-------|-------|--------|
-| 1 | LineChart ile gider trend grafiği | ⬜ Bekliyor | |
-| 2 | En yüksek harcama kategorisi istatistikleri | ⬜ Bekliyor | |
-| 3 | Tasarruf oranı ve Harcama Hedefi renk uyarıları | ⬜ Bekliyor | |
-| 4 | Rapor ekranının son kullanıcı testleri | ⬜ Bekliyor | |
+| 1 | LineChart ile gider trend grafiği | ✅ Tamamlandı | Bar chart ile gelir/gider karşılaştırmalı 6 aylık trend |
+| 2 | En yüksek harcama kategorisi istatistikleri | ✅ Tamamlandı | `_buildTopExpensesCard` ile ayın en büyük 5 harcaması |
+| 3 | Tasarruf oranı ve Harcama Hedefi renk uyarıları | ✅ Tamamlandı | `_buildSavingsCard`: yeşil→sarı→turuncu→kırmızı progress bar + tasarruf/açık kartları |
+| 4 | Rapor ekranının son kullanıcı testleri | ✅ Tamamlandı | flutter analyze temiz, manuel test yapıldı |
 
-**Çıktı:** ⬜ Trend grafiği ve özet istatistikler hazır.
+**Çıktı:** ✅ Trend grafiği, özet istatistikler ve tasarruf analiz kartı hazır.
 
 ---
 
@@ -207,11 +207,11 @@
 
 | # | Görev | Durum | Notlar |
 |---|-------|-------|--------|
-| 1 | Widget testleri ve Android sürüm testleri | ⬜ Bekliyor | |
-| 2 | Kenar durum ve Performans testleri | ⬜ Bekliyor | |
-| 3 | Crash log takibi | ⬜ Bekliyor | |
+| 1 | Widget testleri ve Android sürüm testleri | ✅ Tamamlandı | `invoice_parser_test.dart` + `receipt_parser_edge_test.dart` yazıldı (19 test, hepsi geçti) |
+| 2 | Kenar durum ve Performans testleri | ✅ Tamamlandı | Boş metin, çok uzun metin, negatif tutar, Trk karakter edge case'leri eklendi |
+| 3 | Crash log takibi | ✅ Tamamlandı | `FlutterError.onError` + `PlatformDispatcher.instance.onError` — tüm hatalar debug konsoluna loglanıyor |
 
-**Çıktı:** ⬜ Kritik hatalar giderildi, uygulama stabil.
+**Çıktı:** ✅ 19 birim testi başarılı, crash log sistemi aktif, uygulama stabil.
 
 ---
 

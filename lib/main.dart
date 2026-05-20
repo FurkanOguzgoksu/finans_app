@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/services.dart';
@@ -18,6 +19,23 @@ import 'utils/app_theme.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
+  // ─── Crash Log Sistemi (Hafta 13) ────────────────────
+  // Flutter framework hataları (widget build hataları vs.)
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+    debugPrint('🔴 [FLUTTER HATA] ${details.exception}');
+    debugPrint('   Konum : ${details.library}');
+    debugPrint('   Özet  : ${details.summary}');
+  };
+
+  // Dart/async hataları (Future/Stream'den kaçan hatalar)
+  PlatformDispatcher.instance.onError = (error, stack) {
+    debugPrint('🔴 [DART HATA] $error');
+    debugPrint('   StackTrace: $stack');
+    return true; // true => hata yakalandı, uygulama çökmesin
+  };
+  // ─────────────────────────────────────────────────────
+
   // Çevre değişkenlerini yükle (Hata olursa yoksay, fallback devam eder)
   try {
     await dotenv.load(fileName: 'assets/.env');
@@ -52,6 +70,7 @@ void main() async {
     ),
   );
 }
+
 
 class FinansApp extends StatefulWidget {
   final bool showOnboarding;

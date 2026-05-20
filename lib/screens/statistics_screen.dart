@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../providers/transaction_provider.dart';
 import '../providers/category_provider.dart';
+import '../providers/settings_provider.dart';
 import '../models/category.dart';
 import '../utils/currency_formatter.dart';
 
@@ -209,6 +210,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
     final txProvider = context.watch<TransactionProvider>();
     final catProvider = context.watch<CategoryProvider>();
+    final settingsProvider = context.watch<SettingsProvider>();
+    final monthlyIncomeGoal = settingsProvider.monthlyIncome;
 
     // Seçili aya ait işlemleri filtrele
     final monthlyTx = txProvider.transactions.where((tx) {
@@ -416,6 +419,17 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           slivers: [
             SliverToBoxAdapter(
               child: _buildMonthSelector(theme),
+            ),
+
+            // Tasarruf Oranı ve Bütçe Durumu Kartı
+            SliverToBoxAdapter(
+              child: _buildSavingsCard(
+                theme,
+                isDark,
+                totalMonthlyIncome,
+                totalMonthlyExpense,
+                monthlyIncomeGoal,
+              ),
             ),
 
             // Günlük Harcama Ortalaması Kartı
@@ -906,8 +920,214 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     );
   }
 
+  // ─── Tasarruf Oranı ve Bütçe Kartı ───
+  Widget _buildSavingsCard(
+    ThemeData theme,
+    bool isDark,
+    double totalMonthlyIncome,
+    double totalMonthlyExpense,
+    double monthlyIncomeGoal,
+  ) {
+    // Geliri hesaplarken gerçek veriyi veya ayarlardaki hedefi kullan
+    final effectiveIncome = totalMonthlyIncome > 0 ? totalMonthlyIncome : monthlyIncomeGoal;
+    final savings = effectiveIncome - totalMonthlyExpense;
+    final savingsRate = effectiveIncome > 0 ? (savings / effectiveIncome).clamp(0.0, 1.0) : 0.0;
+    final spendRate  = effectiveIncome > 0 ? (totalMonthlyExpense / effectiveIncome).clamp(0.0, 1.0) : 0.0;
+
+    // Renk: yeşil → sarı → turuncu → kırmızı
+    Color barColor;
+    String statusText;
+    IconData statusIcon;
+    if (spendRate < 0.6) {
+      barColor    = const Color(0xFF10B981); // yeşil
+      statusText  = 'Harika gidiyorsun! 🎉';
+      statusIcon  = Icons.sentiment_very_satisfied_rounded;
+    } else if (spendRate < 0.8) {
+      barColor    = const Color(0xFFF59E0B); // sarı
+      statusText  = 'Dikkatli harca 🙂';
+      statusIcon  = Icons.sentiment_neutral_rounded;
+    } else if (spendRate < 1.0) {
+      barColor    = const Color(0xFFF97316); // turuncu
+      statusText  = 'Bütçe sınırında ⚠️';
+      statusIcon  = Icons.sentiment_dissatisfied_rounded;
+    } else {
+      barColor    = const Color(0xFFEF4444); // kırmızı
+      statusText  = 'Bütçeyi aştın! ❌';
+      statusIcon  = Icons.sentiment_very_dissatisfied_rounded;
+    }
+
+    final hasData = effectiveIncome > 0;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark
+            ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3)
+            : Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.green.shade900.withValues(alpha: 0.06),
+                  blurRadius: 15,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.savings_rounded, color: const Color(0xFF10B981), size: 22),
+              const SizedBox(width: 8),
+              Text(
+                'Tasarruf Durumu',
+                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const Spacer(),
+              if (hasData)
+                Icon(statusIcon, color: barColor, size: 22),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          if (!hasData)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: theme.colorScheme.primary, size: 18),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Ayarlar ekranından aylık gelirinizi girerek tasarruf analizini aktifleştirin.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else ...[
+            // Durum yazısı
+            Text(
+              statusText,
+              style: TextStyle(
+                fontSize: 13,
+                color: barColor,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Progress Bar
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: LinearProgressIndicator(
+                value: spendRate,
+                minHeight: 12,
+                backgroundColor: theme.colorScheme.onSurface.withValues(alpha: 0.1),
+                valueColor: AlwaysStoppedAnimation<Color>(barColor),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Harcanan: ₺${CurrencyFormatter.format(totalMonthlyExpense)}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
+                ),
+                Text(
+                  'Gelir: ₺${CurrencyFormatter.format(effectiveIncome)}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Tasarruf / Açık rakamları
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Tasarruf', style: TextStyle(fontSize: 11, color: Color(0xFF10B981))),
+                        const SizedBox(height: 4),
+                        Text(
+                          '₺${CurrencyFormatter.format(savings < 0 ? 0 : savings)}',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF10B981),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: barColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          savings < 0 ? 'Açık' : 'Tasarruf Oranı',
+                          style: TextStyle(fontSize: 11, color: barColor),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          savings < 0
+                              ? '-₺${CurrencyFormatter.format(savings.abs())}'
+                              : '%${(savingsRate * 100).toStringAsFixed(1)}',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: barColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   // ─── Günlük Harcama Ortalaması Kartı ───
   Widget _buildDailyAverageCard(
+
     ThemeData theme,
     bool isDark,
     double totalMonthlyExpense,
