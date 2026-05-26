@@ -356,7 +356,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     icon: Icon(
                       Icons.search_rounded,
                       size: 20,
-                      color: theme.colorScheme.primary,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                     contentPadding: EdgeInsets.zero,
                   ),
