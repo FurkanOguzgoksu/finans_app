@@ -7,6 +7,7 @@ import '../providers/theme_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/transaction_provider.dart';
 import '../providers/category_provider.dart';
+import '../providers/auth_provider.dart';
 import '../models/transaction.dart' as models;
 import '../utils/currency_formatter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -93,44 +94,69 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Widget _buildProfileCard(BuildContext context, ThemeData theme) {
-    return Consumer<SettingsProvider>(
-      builder: (context, settings, child) {
-        final userName = settings.userName.isNotEmpty
-            ? settings.userName
-            : 'Misafir Kullanıcı';
-        final userEmail = settings.userEmail.isNotEmpty
-            ? settings.userEmail
-            : 'Giriş yapılmadı';
+    return Consumer2<SettingsProvider, AuthProvider>(
+      builder: (context, settings, authProvider, child) {
+        final user = authProvider.user;
+
+        // Kullanıcı bilgileri (Supabase'den, yoksa yerel ayarlardan alıyoruz)
+        final userName = user != null 
+            ? authProvider.displayName 
+            : (settings.userName.isNotEmpty ? settings.userName : 'Misafir Kullanıcı');
+        
+        final userEmail = user != null 
+            ? (user.email ?? '') 
+            : (settings.userEmail.isNotEmpty ? settings.userEmail : 'Giriş yapılmadı');
+        
         final initial = userName.isNotEmpty ? userName[0].toUpperCase() : '?';
-        final hasPhoto = settings.userPhotoPath.isNotEmpty;
+        
+        // Profil resmi belirleme
+        ImageProvider? avatarImage;
+        if (user != null && authProvider.avatarUrl != null) {
+          avatarImage = NetworkImage(authProvider.avatarUrl!);
+        } else if (settings.userPhotoPath.isNotEmpty) {
+          avatarImage = FileImage(File(settings.userPhotoPath));
+        }
 
         return _buildSettingsCard(
-          title: 'PROFİL',
+          title: 'PROFİL VE HESAP',
           theme: theme,
           children: [
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                CircleAvatar(
-                  radius: 32,
-                  backgroundColor: theme.colorScheme.primary.withValues(
-                    alpha: 0.1,
+                // Profil Resmi / Avatar
+                Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: theme.colorScheme.primary.withValues(alpha: 0.15),
+                        blurRadius: 12,
+                        spreadRadius: 2,
+                      ),
+                    ],
                   ),
-                  foregroundColor: theme.colorScheme.primary,
-                  backgroundImage: hasPhoto
-                      ? FileImage(File(settings.userPhotoPath))
-                      : null,
-                  child: !hasPhoto
-                      ? Text(
-                          initial,
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        )
-                      : null,
+                  child: CircleAvatar(
+                    radius: 36,
+                    backgroundColor: theme.colorScheme.primary.withValues(
+                      alpha: 0.1,
+                    ),
+                    foregroundColor: theme.colorScheme.primary,
+                    backgroundImage: avatarImage,
+                    child: avatarImage == null
+                        ? Text(
+                            initial,
+                            style: const TextStyle(
+                              fontSize: 26,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          )
+                        : null,
+                  ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 18),
+                
+                // İsim ve Detaylar
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -139,70 +165,169 @@ class SettingsScreen extends StatelessWidget {
                         userName,
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                          fontSize: 18,
+                          letterSpacing: 0.2,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 3),
                       Text(
                         userEmail,
                         style: TextStyle(
                           color: theme.colorScheme.onSurface.withValues(
-                            alpha: 0.5,
+                            alpha: 0.6,
                           ),
                           fontSize: 13,
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        height: 32,
-                        child: OutlinedButton(
-                          onPressed: () => context.push('/profile'),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            side: BorderSide(
-                              color: theme.colorScheme.outline.withValues(
-                                alpha: 0.5,
-                              ),
+                      const SizedBox(height: 8),
+
+                      // Giriş yöntemi etiketi (Google veya E-posta)
+                      if (user != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: authProvider.loginMethod == 'Google'
+                                ? Colors.red.withValues(alpha: 0.08)
+                                : theme.colorScheme.primary.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(30),
+                            border: Border.all(
+                              color: authProvider.loginMethod == 'Google'
+                                  ? Colors.red.withValues(alpha: 0.2)
+                                  : theme.colorScheme.primary.withValues(alpha: 0.2),
+                              width: 1,
                             ),
                           ),
-                          child: const Text(
-                            'Profili Düzenle',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                authProvider.loginMethod == 'Google'
+                                    ? Icons.g_mobiledata
+                                    : Icons.email_outlined,
+                                size: authProvider.loginMethod == 'Google' ? 20 : 14,
+                                color: authProvider.loginMethod == 'Google'
+                                    ? Colors.red
+                                    : theme.colorScheme.primary,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${authProvider.loginMethod} ile giriş yapıldı',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: authProvider.loginMethod == 'Google'
+                                      ? Colors.red
+                                      : theme.colorScheme.primary,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
                     ],
                   ),
                 ),
               ],
             ),
             const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
+              padding: EdgeInsets.symmetric(vertical: 16),
               child: Divider(height: 1),
             ),
-            _buildListItem(
-              icon: Icons.shield_outlined,
-              title: 'Hesap Güvenliği',
-              theme: theme,
-              trailing: Switch(
-                value: true, // Şimdilik görsel amaçlı
-                onChanged: (val) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Yakında eklenecek')),
-                  );
-                },
-                activeThumbColor: theme.colorScheme.primary,
-              ),
+            
+            // Profili Düzenle & Güvenlik Butonları
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => context.push('/profile'),
+                    icon: const Icon(Icons.edit_outlined, size: 16),
+                    label: const Text('Profili Düzenle'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      side: BorderSide(
+                        color: theme.colorScheme.outline.withValues(alpha: 0.3),
+                      ),
+                    ),
+                  ),
+                ),
+                if (user != null) ...[
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _showSignOutDialog(context, authProvider),
+                      icon: const Icon(Icons.logout_rounded, size: 16, color: Colors.red),
+                      label: const Text(
+                        'Çıkış Yap',
+                        style: TextStyle(color: Colors.red),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        side: BorderSide(
+                          color: Colors.red.withValues(alpha: 0.3),
+                        ),
+                        backgroundColor: Colors.red.withValues(alpha: 0.05),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ],
         );
       },
+    );
+  }
+
+  // Çıkış yap onay dialogu
+  void _showSignOutDialog(BuildContext context, AuthProvider authProvider) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.logout_rounded, color: Colors.red),
+            SizedBox(width: 10),
+            Text('Oturumu Kapat'),
+          ],
+        ),
+        content: const Text(
+          'Hesabınızdan çıkış yapmak istediğinize emin misiniz? Yerel verileriniz telefonunuzda saklanmaya devam edecektir.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('İptal'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              await authProvider.signOut();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Başarıyla çıkış yapıldı.'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: const Text('Çıkış Yap'),
+          ),
+        ],
+      ),
     );
   }
 

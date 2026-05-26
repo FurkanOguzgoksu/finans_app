@@ -12,6 +12,36 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
+  // Kullanıcı adı (Ad Soyad)
+  String get displayName {
+    if (_user == null) return 'Misafir Kullanıcı';
+    final metadata = _user!.userMetadata;
+    if (metadata != null) {
+      if (metadata['full_name'] != null) return metadata['full_name'] as String;
+      if (metadata['name'] != null) return metadata['name'] as String;
+    }
+    return _user!.email?.split('@').first ?? 'Misafir';
+  }
+
+  // Kullanıcı profil resmi URL'i
+  String? get avatarUrl {
+    if (_user == null) return null;
+    final metadata = _user!.userMetadata;
+    if (metadata != null) {
+      if (metadata['avatar_url'] != null) return metadata['avatar_url'] as String;
+      if (metadata['picture'] != null) return metadata['picture'] as String;
+    }
+    return null;
+  }
+
+  // Giriş yöntemi (Google, E-posta vb.)
+  String get loginMethod {
+    if (_user == null) return 'Bilinmiyor';
+    final provider = _user!.appMetadata['provider'] ?? 'email';
+    if (provider == 'google') return 'Google';
+    return 'E-posta';
+  }
+
   AuthProvider() {
     _initializeAuth();
   }
