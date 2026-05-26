@@ -28,6 +28,14 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+
+            <!-- Deep linking intent filter for Supabase Google Sign-In redirect -->
+            <intent-filter android:label="flutter_web_auth">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="finansapp" android:host="login-callback" />
+            </intent-filter>
         </activity>
 
         <!-- Image Cropper Activity -->

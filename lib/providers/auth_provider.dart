@@ -73,7 +73,7 @@ class AuthProvider extends ChangeNotifier {
       
       final success = await _supabase.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: 'io.supabase.flutter://login-callback/', // Supabase dashboard'daki redirect URL ile aynı olmalı
+        redirectTo: 'finansapp://login-callback', // Bu URL Android Manifest ve Supabase Dashboard'da tanımlı olmalı
       );
 
       _setLoading(false);
