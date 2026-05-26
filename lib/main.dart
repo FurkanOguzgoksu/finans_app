@@ -88,19 +88,13 @@ class _FinansAppState extends State<FinansApp> {
   @override
   void initState() {
     super.initState();
-    // Router requires AuthProvider to be passed. We'll get it in the build method.
+    final authProvider = context.read<AuthProvider>();
+    _router = AppRouter.createRouter(widget.showOnboarding, authProvider);
   }
 
   @override
   Widget build(BuildContext context) {
     final themeMode = context.watch<ThemeProvider>().themeMode;
-    final authProvider = context.read<AuthProvider>();
-    
-    // Router'ı burada başlatıyoruz ki authProvider'a erişebilelim
-    // (Bunu her build'de baştan oluşturmamak için genellikle late final olarak
-    // initState içinde context.read ile alıp oluştururuz, ama go_router refreshListenable
-    // ile de dinleyebiliyor).
-    _router = AppRouter.createRouter(widget.showOnboarding, authProvider);
 
     // Sistem temasına göre status bar ikonlarını belirle
     final isDark = themeMode == ThemeMode.dark ||
