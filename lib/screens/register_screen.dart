@@ -68,7 +68,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final authProvider = context.watch<AuthProvider>();
 
     return LoadingOverlay(
-      isLoading: authProvider.isLoading,
+      isLoading: authProvider.loadingState == AuthLoadingState.signingUp,
       message: 'Hesap Oluşturuluyor...',
       child: Scaffold(
         appBar: AppBar(

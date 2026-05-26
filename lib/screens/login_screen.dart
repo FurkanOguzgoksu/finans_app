@@ -71,7 +71,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final authProvider = context.watch<AuthProvider>();
 
     return LoadingOverlay(
-      isLoading: authProvider.isLoading,
+      isLoading: authProvider.loadingState == AuthLoadingState.signingIn,
       message: 'Giriş Yapılıyor...',
       child: Scaffold(
         body: Container(

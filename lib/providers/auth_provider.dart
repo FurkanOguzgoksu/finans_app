@@ -2,14 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/supabase_service.dart';
 
+enum AuthLoadingState { none, signingIn, signingUp, signingOut }
+
 class AuthProvider extends ChangeNotifier {
   final SupabaseClient _supabase = SupabaseService.client;
   User? _user;
-  bool _isLoading = false;
+  AuthLoadingState _loadingState = AuthLoadingState.none;
   String? _errorMessage;
 
   User? get user => _user;
-  bool get isLoading => _isLoading;
+  AuthLoadingState get loadingState => _loadingState;
+  bool get isLoading => _loadingState != AuthLoadingState.none;
   String? get errorMessage => _errorMessage;
 
   // Kullanıcı adı (Ad Soyad)
@@ -58,13 +61,13 @@ class AuthProvider extends ChangeNotifier {
   // E-posta ile Kayıt
   Future<bool> signUpWithEmail(String email, String password, String fullName) async {
     try {
-      _setLoading(true);
+      _setLoading(AuthLoadingState.signingUp);
       await _supabase.auth.signUp(
         email: email,
         password: password,
         data: {'full_name': fullName},
       );
-      _setLoading(false);
+      _setLoading(AuthLoadingState.none);
       return true;
     } on AuthException catch (error) {
       _setError(error.message);
@@ -78,12 +81,12 @@ class AuthProvider extends ChangeNotifier {
   // E-posta ile Giriş
   Future<bool> signInWithEmail(String email, String password) async {
     try {
-      _setLoading(true);
+      _setLoading(AuthLoadingState.signingIn);
       await _supabase.auth.signInWithPassword(
         email: email,
         password: password,
       );
-      _setLoading(false);
+      _setLoading(AuthLoadingState.none);
       return true;
     } on AuthException catch (error) {
       _setError(error.message);
@@ -97,7 +100,7 @@ class AuthProvider extends ChangeNotifier {
   // Google ile Giriş
   Future<bool> signInWithGoogle() async {
     try {
-      _setLoading(true);
+      _setLoading(AuthLoadingState.signingIn);
       // Supabase'in yerleşik OAuth provider'ını kullanarak Google girişi
       // Bu işlem cihazın varsayılan tarayıcısını açar ve girişten sonra uygulamaya geri döner.
       
@@ -106,7 +109,7 @@ class AuthProvider extends ChangeNotifier {
         redirectTo: 'finansapp://login-callback', // Bu URL Android Manifest ve Supabase Dashboard'da tanımlı olmalı
       );
 
-      _setLoading(false);
+      _setLoading(AuthLoadingState.none);
       return success;
     } on AuthException catch (error) {
       _setError(error.message);
@@ -120,9 +123,9 @@ class AuthProvider extends ChangeNotifier {
   // Çıkış Yap
   Future<void> signOut() async {
     try {
-      _setLoading(true);
+      _setLoading(AuthLoadingState.signingOut);
       await _supabase.auth.signOut();
-      _setLoading(false);
+      _setLoading(AuthLoadingState.none);
     } catch (error) {
       _setError('Çıkış yaparken bir hata oluştu: $error');
     }
@@ -134,14 +137,14 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _setLoading(bool value) {
-    _isLoading = value;
-    if (value) _errorMessage = null; // Yükleme başlarken önceki hatayı temizle
+  void _setLoading(AuthLoadingState state) {
+    _loadingState = state;
+    if (state != AuthLoadingState.none) _errorMessage = null; // Yükleme başlarken önceki hatayı temizle
     notifyListeners();
   }
 
   void _setError(String message) {
     _errorMessage = message;
-    _setLoading(false);
+    _setLoading(AuthLoadingState.none);
   }
 }

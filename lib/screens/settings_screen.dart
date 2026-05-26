@@ -22,7 +22,7 @@ class SettingsScreen extends StatelessWidget {
     final authProvider = context.watch<AuthProvider>();
 
     return LoadingOverlay(
-      isLoading: authProvider.isLoading,
+      isLoading: authProvider.loadingState == AuthLoadingState.signingOut,
       message: 'Çıkış Yapılıyor...',
       child: Scaffold(
         appBar: AppBar(
