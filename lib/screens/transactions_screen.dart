@@ -17,6 +17,7 @@ class TransactionsScreen extends StatefulWidget {
 enum SortOption { dateDesc, dateAsc, amountDesc, amountAsc }
 
 class _TransactionsScreenState extends State<TransactionsScreen> {
+  bool _isSearching = false;
   String _searchQuery = '';
   int? _selectedCategoryId; // null ise hepsi
   String? _selectedType; // null = hepsi, 'gelir', 'gider'
@@ -52,6 +53,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       _maxAmount = null;
       _searchQuery = '';
       _searchController.clear();
+      _isSearching = false;
       _sortOption = SortOption.dateDesc;
     });
   }
@@ -303,15 +305,77 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
-        title: const Text('Tüm İşlemler', style: TextStyle(fontWeight: FontWeight.bold)),
-        centerTitle: true,
+        titleSpacing: 16,
+        centerTitle: false,
+        title: _isSearching
+            ? Container(
+                height: 40,
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3)
+                      : theme.colorScheme.onSurface.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: TextField(
+                  controller: _searchController,
+                  autofocus: true,
+                  style: const TextStyle(fontSize: 14),
+                  decoration: InputDecoration(
+                    hintText: 'İşlem ara (başlık, açıklama)...',
+                    hintStyle: TextStyle(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                    ),
+                    border: InputBorder.none,
+                    icon: Icon(
+                      Icons.search_rounded,
+                      size: 20,
+                      color: theme.colorScheme.primary,
+                    ),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  onChanged: (value) => setState(() => _searchQuery = value),
+                ),
+              )
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Tüm İşlemler',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(width: 4),
+                  IconButton(
+                    icon: Icon(
+                      Icons.search_rounded,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                      size: 22,
+                    ),
+                    tooltip: 'İşlem Ara',
+                    onPressed: () => setState(() => _isSearching = true),
+                  ),
+                ],
+              ),
         actions: [
+          if (_isSearching)
+            IconButton(
+              icon: const Icon(Icons.close_rounded),
+              tooltip: 'Aramayı Kapat',
+              onPressed: () {
+                setState(() {
+                  _isSearching = false;
+                  _searchQuery = '';
+                  _searchController.clear();
+                });
+              },
+            ),
           // Sıralama butonu
           IconButton(
             icon: const Icon(Icons.sort_rounded),
             tooltip: 'Sırala',
             onPressed: _showSortOptions,
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: Container(
@@ -326,36 +390,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         ),
         child: Column(
           children: [
-            // ─── Arama Çubuğu ───
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: 'İşlem ara (başlık veya açıklama)...',
-                  prefixIcon: const Icon(Icons.search),
-                  suffixIcon: _searchQuery.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.close, size: 20),
-                          onPressed: () {
-                            _searchController.clear();
-                            setState(() => _searchQuery = '');
-                          },
-                        )
-                      : null,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide.none,
-                  ),
-                  filled: true,
-                  fillColor: isDark
-                      ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3)
-                      : Colors.white,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                ),
-                onChanged: (value) => setState(() => _searchQuery = value),
-              ),
-            ),
+            const SizedBox(height: 12),
 
             // ─── Filtre Satırı (Tek Satır) ───
             SizedBox(
