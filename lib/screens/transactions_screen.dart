@@ -310,9 +310,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         leading: _isSearching
             ? null
             : IconButton(
-                icon: Icon(
+                icon: const Icon(
                   Icons.search_rounded,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                   size: 22,
                 ),
                 tooltip: 'İşlem Ara',
