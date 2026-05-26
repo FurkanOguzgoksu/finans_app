@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../providers/settings_provider.dart';
+import '../providers/auth_provider.dart';
 
 /// Profil Ekranı
 /// Kullanıcının profil bilgilerini (fotoğraf, isim, e-posta) gösterdiği ve
@@ -16,18 +17,36 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Profil'), centerTitle: true),
-      body: Consumer<SettingsProvider>(
-        builder: (context, settings, child) {
+      body: Consumer2<SettingsProvider, AuthProvider>(
+        builder: (context, settings, authProvider, child) {
           final theme = Theme.of(context);
-          final hasPhoto = settings.userPhotoPath.isNotEmpty;
-          final initial = settings.userName.isNotEmpty
-              ? settings.userName[0].toUpperCase()
-              : '?';
+          final user = authProvider.user;
 
-          final nameController = TextEditingController(text: settings.userName);
-          final emailController = TextEditingController(
-            text: settings.userEmail,
-          );
+          // Kullanıcı bilgileri (Supabase'den, yoksa yerel ayarlardan alıyoruz)
+          final userName = user != null 
+              ? authProvider.displayName 
+              : (settings.userName.isNotEmpty ? settings.userName : 'Misafir Kullanıcı');
+          
+          final userEmail = user != null 
+              ? (user.email ?? '') 
+              : (settings.userEmail.isNotEmpty ? settings.userEmail : 'Giriş yapılmadı');
+
+          final initial = userName.isNotEmpty ? userName[0].toUpperCase() : '?';
+
+          // Profil fotoğrafı kaynağını belirleme
+          ImageProvider? avatarImage;
+          bool hasPhoto = false;
+
+          if (user != null && authProvider.avatarUrl != null) {
+            avatarImage = NetworkImage(authProvider.avatarUrl!);
+            hasPhoto = true;
+          } else if (settings.userPhotoPath.isNotEmpty) {
+            avatarImage = FileImage(File(settings.userPhotoPath));
+            hasPhoto = true;
+          }
+
+          final nameController = TextEditingController(text: userName);
+          final emailController = TextEditingController(text: userEmail);
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
@@ -57,10 +76,9 @@ class ProfileScreen extends StatelessWidget {
                                           width: double.infinity,
                                           height: double.infinity,
                                           child: InteractiveViewer(
-                                            child: Image.file(
-                                              File(settings.userPhotoPath),
-                                              fit: BoxFit.contain,
-                                            ),
+                                            child: avatarImage != null
+                                                ? Image(image: avatarImage, fit: BoxFit.contain)
+                                                : const SizedBox(),
                                           ),
                                         ),
                                       ),
@@ -87,9 +105,7 @@ class ProfileScreen extends StatelessWidget {
                         radius: 60,
                         backgroundColor: theme.colorScheme.primaryContainer,
                         foregroundColor: theme.colorScheme.onPrimaryContainer,
-                        backgroundImage: hasPhoto
-                            ? FileImage(File(settings.userPhotoPath))
-                            : null,
+                        backgroundImage: avatarImage,
                         child: !hasPhoto
                             ? Text(
                                 initial,
