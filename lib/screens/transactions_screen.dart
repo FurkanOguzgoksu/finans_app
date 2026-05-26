@@ -306,7 +306,18 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
         titleSpacing: 16,
-        centerTitle: false,
+        centerTitle: true,
+        leading: _isSearching
+            ? null
+            : IconButton(
+                icon: Icon(
+                  Icons.search_rounded,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                  size: 22,
+                ),
+                tooltip: 'İşlem Ara',
+                onPressed: () => setState(() => _isSearching = true),
+              ),
         title: _isSearching
             ? Container(
                 height: 40,
@@ -337,24 +348,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                   onChanged: (value) => setState(() => _searchQuery = value),
                 ),
               )
-            : Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'Tüm İşlemler',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(width: 4),
-                  IconButton(
-                    icon: Icon(
-                      Icons.search_rounded,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                      size: 22,
-                    ),
-                    tooltip: 'İşlem Ara',
-                    onPressed: () => setState(() => _isSearching = true),
-                  ),
-                ],
+            : const Text(
+                'Tüm İşlemler',
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
         actions: [
           if (_isSearching)
