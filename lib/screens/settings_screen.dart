@@ -8,6 +8,7 @@ import '../providers/settings_provider.dart';
 import '../providers/transaction_provider.dart';
 import '../providers/category_provider.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/loading_overlay.dart';
 import '../models/transaction.dart' as models;
 import '../utils/currency_formatter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -18,29 +19,34 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final authProvider = context.watch<AuthProvider>();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'AYARLAR',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 16,
-            letterSpacing: 1.2,
+    return LoadingOverlay(
+      isLoading: authProvider.isLoading,
+      message: 'Çıkış Yapılıyor...',
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text(
+            'AYARLAR',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+              letterSpacing: 1.2,
+            ),
           ),
+          centerTitle: true,
         ),
-        centerTitle: true,
-      ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        children: [
-          _buildProfileCard(context, theme),
-          _buildAppearanceCard(context, theme),
-          _buildFinancialCard(context, theme),
-          _buildManagementCard(context, theme),
-          _buildAboutCard(context, theme),
-          const SizedBox(height: 40), // Alt boşluk
-        ],
+        body: ListView(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          children: [
+            _buildProfileCard(context, theme),
+            _buildAppearanceCard(context, theme),
+            _buildFinancialCard(context, theme),
+            _buildManagementCard(context, theme),
+            _buildAboutCard(context, theme),
+            const SizedBox(height: 40), // Alt boşluk
+          ],
+        ),
       ),
     );
   }
