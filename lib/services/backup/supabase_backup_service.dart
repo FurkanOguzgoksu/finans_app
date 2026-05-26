@@ -16,27 +16,44 @@ class SupabaseBackupService implements BackupService {
   Future<bool> exportData() async {
     try {
       final client = SupabaseService.client;
+      final currentUser = client.auth.currentUser;
+
+      if (currentUser == null) {
+        throw Exception('Bulut yedeklemesi için önce giriş yapmalısınız.');
+      }
 
       final categories = await _categoryDao.getAll();
       final transactions = await _transactionDao.getAll();
 
       // Kategorileri yükle (upsert = varsa güncelle, yoksa ekle)
       if (categories.isNotEmpty) {
+        final categoryMaps = categories.map((c) {
+          final map = c.toMap();
+          map['user_id'] = currentUser.id; // Giriş yapan kullanıcının ID'si ekleniyor
+          return map;
+        }).toList();
+
         await client.from('categories').upsert(
-          categories.map((c) => c.toMap()).toList(),
-          onConflict: 'id',
+          categoryMaps,
+          onConflict: 'id,user_id',
         );
-        debugPrint('✅ ${categories.length} kategori yedeklendi.');
+        debugPrint('✅ ${categories.length} kategori buluta yedeklendi.');
       }
 
       // ID'si null olmayan işlemleri filtrele (Supabase PRIMARY KEY null kabul etmez)
       final validTransactions = transactions.where((t) => t.id != null).toList();
       if (validTransactions.isNotEmpty) {
+        final transactionMaps = validTransactions.map((t) {
+          final map = t.toMap();
+          map['user_id'] = currentUser.id; // Giriş yapan kullanıcının ID'si ekleniyor
+          return map;
+        }).toList();
+
         await client.from('transactions').upsert(
-          validTransactions.map((t) => t.toMap()).toList(),
-          onConflict: 'id',
+          transactionMaps,
+          onConflict: 'id,user_id',
         );
-        debugPrint('✅ ${validTransactions.length} işlem yedeklendi.');
+        debugPrint('✅ ${validTransactions.length} işlem buluta yedeklendi.');
         
         final skipped = transactions.length - validTransactions.length;
         if (skipped > 0) {
@@ -56,26 +73,47 @@ class SupabaseBackupService implements BackupService {
   Future<bool> importData() async {
     try {
       final client = SupabaseService.client;
+      final currentUser = client.auth.currentUser;
+
+      if (currentUser == null) {
+        throw Exception('Yedekleri geri yüklemek için önce giriş yapmalısınız.');
+      }
+
       final db = await DatabaseService().database;
 
-      // ── Kategorileri çek ve SQLite'ye yaz ──
-      final categoryData = await client.from('categories').select();
+      // ── Sadece aktif kullanıcıya ait kategorileri çek ve SQLite'ye yaz ──
+      final categoryData = await client
+          .from('categories')
+          .select()
+          .eq('user_id', currentUser.id);
+
       for (final row in categoryData) {
-        // INSERT OR REPLACE: aynı ID varsa günceller, yoksa ekler
+        // Yerel veritabanında 'user_id' kolonu olmadığı için onu çıkarıyoruz
+        final localRow = Map<String, dynamic>.from(row);
+        localRow.remove('user_id');
+
         await db.insert(
           'categories',
-          row,
+          localRow,
           conflictAlgorithm: sqflite.ConflictAlgorithm.replace,
         );
       }
       debugPrint('✅ ${categoryData.length} kategori geri yüklendi.');
 
-      // ── İşlemleri çek ve SQLite'ye yaz ──
-      final transactionData = await client.from('transactions').select();
+      // ── Sadece aktif kullanıcıya ait işlemleri çek ve SQLite'ye yaz ──
+      final transactionData = await client
+          .from('transactions')
+          .select()
+          .eq('user_id', currentUser.id);
+
       for (final row in transactionData) {
+        // Yerel veritabanında 'user_id' kolonu olmadığı için onu çıkarıyoruz
+        final localRow = Map<String, dynamic>.from(row);
+        localRow.remove('user_id');
+
         await db.insert(
           'transactions',
-          row,
+          localRow,
           conflictAlgorithm: sqflite.ConflictAlgorithm.replace,
         );
       }
