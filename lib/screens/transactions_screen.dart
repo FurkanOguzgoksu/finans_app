@@ -324,8 +324,23 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 decoration: BoxDecoration(
                   color: isDark
                       ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3)
-                      : theme.colorScheme.onSurface.withValues(alpha: 0.05),
+                      : Colors.white,
                   borderRadius: BorderRadius.circular(20),
+                  boxShadow: isDark
+                      ? null
+                      : [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                  border: isDark
+                      ? null
+                      : Border.all(
+                          color: theme.colorScheme.outline.withValues(alpha: 0.15),
+                          width: 1,
+                        ),
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: TextField(
