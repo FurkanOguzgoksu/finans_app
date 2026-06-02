@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/category_provider.dart';
+import '../providers/transaction_provider.dart';
 import '../widgets/loading_overlay.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -40,16 +43,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (!mounted) return;
 
       if (success) {
-        // Kayıt başarılı, login sayfasına ya da ana sayfaya (Supabase konfigine göre otomatik oturum açılırsa) yönlendir.
+        // Kayıt başarılı, AppRouter otomatik yönlendirecek
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Kayıt başarılı!'),
             backgroundColor: Colors.green,
           ),
         );
-        // Genellikle kayıt olunca Supabase otomatik giriş de yapar (eğer email doğrulama zorunlu değilse)
-        // Eğer email doğrulama açıksa: kullanıcı uyarılır.
-        context.go('/');
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

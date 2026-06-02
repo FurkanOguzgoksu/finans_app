@@ -12,6 +12,10 @@ import 'package:finans_app/screens/profile_screen.dart';
 import 'package:finans_app/screens/login_screen.dart';
 import 'package:finans_app/screens/register_screen.dart';
 import 'package:finans_app/providers/auth_provider.dart';
+import 'package:finans_app/providers/category_provider.dart';
+import 'package:finans_app/providers/transaction_provider.dart';
+import 'package:finans_app/widgets/loading_overlay.dart';
+import 'package:provider/provider.dart';
 
 /// Uygulama navigasyon yapılandırması (go_router)
 class AppRouter {
@@ -31,6 +35,9 @@ class AppRouter {
           return '/login';
         }
         if (isLoggedIn && isLoggingIn) {
+          // Kullanıcı yeni giriş yaptı! Verileri çekelim.
+          context.read<CategoryProvider>().loadCategories();
+          context.read<TransactionProvider>().loadTransactions();
           return '/';
         }
         return null;
@@ -139,8 +146,13 @@ class ScaffoldWithNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: navigationShell,
+    final authProvider = context.watch<AuthProvider>();
+
+    return LoadingOverlay(
+      isLoading: authProvider.loadingState == AuthLoadingState.signingOut,
+      message: 'Çıkış Yapılıyor...',
+      child: Scaffold(
+        body: navigationShell,
       bottomNavigationBar: NavigationBar(
         selectedIndex: navigationShell.currentIndex,
         onDestinationSelected: (index) {
@@ -172,6 +184,7 @@ class ScaffoldWithNavBar extends StatelessWidget {
           ),
         ],
       ),
+    ),
     );
   }
 }

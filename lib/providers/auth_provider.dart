@@ -62,11 +62,32 @@ class AuthProvider extends ChangeNotifier {
   Future<bool> signUpWithEmail(String email, String password, String fullName) async {
     try {
       _setLoading(AuthLoadingState.signingUp);
-      await _supabase.auth.signUp(
-        email: email,
-        password: password,
-        data: {'full_name': fullName},
-      );
+      // Animasyonun görünmesi için minimum bekleme süresi
+      final results = await Future.wait([
+        _supabase.auth.signUp(
+          email: email,
+          password: password,
+          data: {'full_name': fullName},
+        ),
+        Future.delayed(const Duration(milliseconds: 2500)),
+      ]);
+
+      final response = results[0] as AuthResponse;
+
+      // Eğer kayıt sonrası oturum açılmadıysa (e-posta doğrulama açık olabilir),
+      // hemen giriş yapmayı dene
+      if (response.session == null) {
+        try {
+          await _supabase.auth.signInWithPassword(
+            email: email,
+            password: password,
+          );
+        } catch (_) {
+          // Giriş de başarısız olursa (e-posta doğrulama zorunluysa)
+          // yine de kayıt başarılı sayılır, kullanıcı bilgilendirilir
+        }
+      }
+
       _setLoading(AuthLoadingState.none);
       return true;
     } on AuthException catch (error) {
@@ -82,19 +103,46 @@ class AuthProvider extends ChangeNotifier {
   Future<bool> signInWithEmail(String email, String password) async {
     try {
       _setLoading(AuthLoadingState.signingIn);
-      await _supabase.auth.signInWithPassword(
-        email: email,
-        password: password,
-      );
+      // Animasyonun görünmesi için minimum bekleme süresi
+      await Future.wait([
+        _supabase.auth.signInWithPassword(
+          email: email,
+          password: password,
+        ),
+        Future.delayed(const Duration(milliseconds: 2500)),
+      ]);
       _setLoading(AuthLoadingState.none);
       return true;
     } on AuthException catch (error) {
-      _setError(error.message);
+      debugPrint('⚠️ Supabase Auth Hatası: ${error.message} (statusCode: ${error.statusCode})');
+      _setError(_mapAuthError(error.message));
       return false;
     } catch (error) {
-      _setError('Giriş yaparken beklenmeyen bir hata oluştu: $error');
+      debugPrint('⚠️ Beklenmeyen Giriş Hatası: $error');
+      _setError('Giriş yaparken beklenmeyen bir hata oluştu.');
       return false;
     }
+  }
+
+  /// Supabase İngilizce hata mesajlarını Türkçeye çevirir
+  String _mapAuthError(String message) {
+    final lower = message.toLowerCase();
+    if (lower.contains('email not confirmed')) {
+      return 'E-posta adresiniz doğrulanmamış. Lütfen e-posta kutunuzu kontrol edin veya yönetici panelinden e-posta doğrulamayı kapatın.';
+    }
+    if (lower.contains('invalid login credentials') || lower.contains('invalid_credentials')) {
+      return 'E-posta veya şifre hatalı. Lütfen bilgilerinizi kontrol edin.';
+    }
+    if (lower.contains('user not found')) {
+      return 'Bu e-posta ile kayıtlı kullanıcı bulunamadı.';
+    }
+    if (lower.contains('too many requests') || lower.contains('rate limit')) {
+      return 'Çok fazla deneme yaptınız. Lütfen biraz bekleyin.';
+    }
+    if (lower.contains('network') || lower.contains('socket') || lower.contains('connection')) {
+      return 'İnternet bağlantınızı kontrol edin.';
+    }
+    return message;
   }
 
   // Google ile Giriş
@@ -109,7 +157,13 @@ class AuthProvider extends ChangeNotifier {
         redirectTo: 'finansapp://login-callback', // Bu URL Android Manifest ve Supabase Dashboard'da tanımlı olmalı
       );
 
-      _setLoading(AuthLoadingState.none);
+      if (!success) {
+        _setLoading(AuthLoadingState.none);
+      } else {
+        // Tarayıcıya geçiş yapana kadar loading animasyonu ekranda kalsın
+        await Future.delayed(const Duration(milliseconds: 2500));
+        _setLoading(AuthLoadingState.none);
+      }
       return success;
     } on AuthException catch (error) {
       _setError(error.message);
@@ -124,6 +178,10 @@ class AuthProvider extends ChangeNotifier {
   Future<void> signOut() async {
     try {
       _setLoading(AuthLoadingState.signingOut);
+      // Animasyonun görünmesi için çıkış işlemini biraz geciktiriyoruz.
+      // Çünkü signOut çağrıldığı an router otomatik login sayfasına atıyor.
+      await Future.delayed(const Duration(milliseconds: 1500));
+      
       await _supabase.auth.signOut();
       _setLoading(AuthLoadingState.none);
     } catch (error) {

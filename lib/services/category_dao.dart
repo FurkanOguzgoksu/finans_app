@@ -1,73 +1,72 @@
 import 'package:finans_app/models/category.dart';
 import 'package:finans_app/repositories/category_repository.dart';
-import 'package:finans_app/services/database_service.dart';
+import 'package:finans_app/services/supabase_service.dart';
 
-/// Category Data Access Object - SQLite üzerinden Kategori CRUD operasyonları
+/// Category Data Access Object - Supabase üzerinden Kategori CRUD operasyonları
 class CategoryDao implements CategoryRepository {
-  final DatabaseService _dbService = DatabaseService();
   final String _tableName = 'categories';
+  final _client = SupabaseService.client;
 
   @override
   Future<List<Category>> getAll() async {
-    final db = await _dbService.database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      _tableName,
-      orderBy: 'type, name',
-    );
-    return maps.map((map) => Category.fromMap(map)).toList();
+    final response = await _client
+        .from(_tableName)
+        .select()
+        .order('type')
+        .order('name');
+    return response.map((map) => Category.fromMap(map)).toList();
   }
 
   @override
   Future<Category?> getById(int id) async {
-    final db = await _dbService.database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      _tableName,
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    final response = await _client
+        .from(_tableName)
+        .select()
+        .eq('id', id)
+        .maybeSingle();
 
-    if (maps.isNotEmpty) {
-      return Category.fromMap(maps.first);
+    if (response != null) {
+      return Category.fromMap(response);
     }
     return null;
   }
 
   @override
   Future<List<Category>> getByType(String type) async {
-    final db = await _dbService.database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      _tableName,
-      where: 'type = ?',
-      whereArgs: [type],
-      orderBy: 'name',
-    );
-    return maps.map((map) => Category.fromMap(map)).toList();
+    final response = await _client
+        .from(_tableName)
+        .select()
+        .eq('type', type)
+        .order('name');
+    return response.map((map) => Category.fromMap(map)).toList();
   }
 
   @override
   Future<int> insert(Category category) async {
-    final db = await _dbService.database;
-    return await db.insert(_tableName, category.toMap());
+    final data = category.toMap();
+    data.remove('id'); // Supabase auto-generates the ID
+    final response = await _client
+        .from(_tableName)
+        .insert(data)
+        .select('id')
+        .single();
+    return response['id'] as int;
   }
 
   @override
   Future<int> update(Category category) async {
     if (category.id == null) return 0;
 
-    final db = await _dbService.database;
-    return await db.update(
-      _tableName,
-      category.toMap(),
-      where: 'id = ?',
-      whereArgs: [category.id],
-    );
+    await _client
+        .from(_tableName)
+        .update(category.toMap())
+        .eq('id', category.id!);
+    return 1;
   }
 
   @override
   Future<int> delete(int id) async {
-    final db = await _dbService.database;
-    // Not: Foreign key constraint nedeniyle, bu kategoriye ait işlemler cascade delete ile silinebilir (ON DELETE CASCADE yapısı)
-    // Veya kullanıcı uyarılmalı
-    return await db.delete(_tableName, where: 'id = ?', whereArgs: [id]);
+    await _client.from(_tableName).delete().eq('id', id);
+    return 1;
   }
 }

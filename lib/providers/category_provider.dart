@@ -72,4 +72,11 @@ class CategoryProvider with ChangeNotifier {
     await _categoryDao.delete(id);
     await loadCategories();
   }
+
+  /// Çıkış yapıldığında verileri temizler
+  void clear() {
+    _categories = [];
+    notifyListeners();
+  }
 }
+

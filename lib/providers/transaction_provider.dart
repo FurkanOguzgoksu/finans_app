@@ -75,4 +75,13 @@ class TransactionProvider with ChangeNotifier {
     await _transactionDao.update(transaction);
     await loadTransactions();
   }
+
+  /// Çıkış yapıldığında verileri temizler
+  void clear() {
+    _transactions = [];
+    _totalIncome = 0.0;
+    _totalExpense = 0.0;
+    _balance = 0.0;
+    notifyListeners();
+  }
 }

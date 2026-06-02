@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/category_provider.dart';
+import '../providers/transaction_provider.dart';
 import '../widgets/loading_overlay.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -33,9 +36,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
 
-      if (success) {
-        context.go('/');
-      } else {
+      if (!success) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(authProvider.errorMessage ?? 'Giriş başarısız.'),
@@ -52,9 +53,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (!mounted) return;
 
-    if (success) {
-      context.go('/');
-    } else {
+    if (!success) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(authProvider.errorMessage ?? 'Google ile giriş başarısız.'),

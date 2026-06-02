@@ -1,96 +1,93 @@
 import 'package:finans_app/models/transaction.dart';
 import 'package:finans_app/repositories/transaction_repository.dart';
-import 'package:finans_app/services/database_service.dart';
+import 'package:finans_app/services/supabase_service.dart';
 
-/// Transaction Data Access Object - SQLite üzerinden İşlem CRUD operasyonları
+/// Transaction Data Access Object - Supabase üzerinden İşlem CRUD operasyonları
 class TransactionDao implements TransactionRepository {
-  final DatabaseService _dbService = DatabaseService();
   final String _tableName = 'transactions';
+  final _client = SupabaseService.client;
 
   @override
   Future<List<Transaction>> getAll() async {
-    final db = await _dbService.database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      _tableName,
-      orderBy: 'date DESC',
-    );
-    return maps.map((map) => Transaction.fromMap(map)).toList();
+    final response = await _client
+        .from(_tableName)
+        .select()
+        .order('date', ascending: false);
+    return response.map((map) => Transaction.fromMap(map)).toList();
   }
 
   @override
   Future<Transaction?> getById(int id) async {
-    final db = await _dbService.database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      _tableName,
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    final response = await _client
+        .from(_tableName)
+        .select()
+        .eq('id', id)
+        .maybeSingle();
 
-    if (maps.isNotEmpty) {
-      return Transaction.fromMap(maps.first);
+    if (response != null) {
+      return Transaction.fromMap(response);
     }
     return null;
   }
 
   @override
   Future<List<Transaction>> getByType(String type) async {
-    final db = await _dbService.database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      _tableName,
-      where: 'type = ?',
-      whereArgs: [type],
-      orderBy: 'date DESC',
-    );
-    return maps.map((map) => Transaction.fromMap(map)).toList();
+    final response = await _client
+        .from(_tableName)
+        .select()
+        .eq('type', type)
+        .order('date', ascending: false);
+    return response.map((map) => Transaction.fromMap(map)).toList();
   }
 
   @override
   Future<List<Transaction>> getByCategoryId(int categoryId) async {
-    final db = await _dbService.database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      _tableName,
-      where: 'category_id = ?',
-      whereArgs: [categoryId],
-      orderBy: 'date DESC',
-    );
-    return maps.map((map) => Transaction.fromMap(map)).toList();
+    final response = await _client
+        .from(_tableName)
+        .select()
+        .eq('category_id', categoryId)
+        .order('date', ascending: false);
+    return response.map((map) => Transaction.fromMap(map)).toList();
   }
 
   @override
   Future<List<Transaction>> getByDateRange(DateTime start, DateTime end) async {
-    final db = await _dbService.database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      _tableName,
-      where: 'date >= ? AND date <= ?',
-      whereArgs: [start.toIso8601String(), end.toIso8601String()],
-      orderBy: 'date DESC',
-    );
-    return maps.map((map) => Transaction.fromMap(map)).toList();
+    final response = await _client
+        .from(_tableName)
+        .select()
+        .gte('date', start.toIso8601String())
+        .lte('date', end.toIso8601String())
+        .order('date', ascending: false);
+    return response.map((map) => Transaction.fromMap(map)).toList();
   }
 
   @override
   Future<int> insert(Transaction transaction) async {
-    final db = await _dbService.database;
-    return await db.insert(_tableName, transaction.toMap());
+    final data = transaction.toMap();
+    data.remove('id'); // Supabase auto-generates the ID
+    final response = await _client
+        .from(_tableName)
+        .insert(data)
+        .select('id')
+        .single();
+    return response['id'] as int;
   }
 
   @override
   Future<int> update(Transaction transaction) async {
     if (transaction.id == null) return 0;
 
-    final db = await _dbService.database;
-    return await db.update(
-      _tableName,
-      transaction.toMap(),
-      where: 'id = ?',
-      whereArgs: [transaction.id],
-    );
+    await _client
+        .from(_tableName)
+        .update(transaction.toMap())
+        .eq('id', transaction.id!);
+    return 1;
   }
 
   @override
   Future<int> delete(int id) async {
-    final db = await _dbService.database;
-    return await db.delete(_tableName, where: 'id = ?', whereArgs: [id]);
+    await _client.from(_tableName).delete().eq('id', id);
+    return 1;
   }
 
   @override
@@ -109,24 +106,21 @@ class TransactionDao implements TransactionRepository {
     DateTime? start,
     DateTime? end,
   }) async {
-    final db = await _dbService.database;
-
-    String whereClause = 'type = ?';
-    List<dynamic> whereArgs = [type];
+    var query = _client.from(_tableName).select('amount').eq('type', type);
 
     if (start != null && end != null) {
-      whereClause += ' AND date >= ? AND date <= ?';
-      whereArgs.addAll([start.toIso8601String(), end.toIso8601String()]);
+      query = query
+          .gte('date', start.toIso8601String())
+          .lte('date', end.toIso8601String());
     }
 
-    final result = await db.rawQuery(
-      'SELECT SUM(amount) as total FROM $_tableName WHERE $whereClause',
-      whereArgs,
-    );
+    final response = await query;
+    if (response.isEmpty) return 0.0;
 
-    if (result.isNotEmpty && result.first['total'] != null) {
-      return (result.first['total'] as num).toDouble();
+    double total = 0.0;
+    for (var row in response) {
+      total += (row['amount'] as num).toDouble();
     }
-    return 0.0;
+    return total;
   }
 }

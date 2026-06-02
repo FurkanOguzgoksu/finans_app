@@ -21,32 +21,28 @@ class SettingsScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final authProvider = context.watch<AuthProvider>();
 
-    return LoadingOverlay(
-      isLoading: authProvider.loadingState == AuthLoadingState.signingOut,
-      message: 'Çıkış Yapılıyor...',
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text(
-            'AYARLAR',
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
-              letterSpacing: 1.2,
-            ),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'AYARLAR',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
+            letterSpacing: 1.2,
           ),
-          centerTitle: true,
         ),
-        body: ListView(
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          children: [
-            _buildProfileCard(context, theme),
-            _buildAppearanceCard(context, theme),
-            _buildFinancialCard(context, theme),
-            _buildManagementCard(context, theme),
-            _buildAboutCard(context, theme),
-            const SizedBox(height: 40), // Alt boşluk
-          ],
-        ),
+        centerTitle: true,
+      ),
+      body: ListView(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        children: [
+          _buildProfileCard(context, theme),
+          _buildAppearanceCard(context, theme),
+          _buildFinancialCard(context, theme),
+          _buildManagementCard(context, theme),
+          _buildAboutCard(context, theme),
+          const SizedBox(height: 40), // Alt boşluk
+        ],
       ),
     );
   }
@@ -315,6 +311,8 @@ class SettingsScreen extends StatelessWidget {
               Navigator.of(ctx).pop();
               await authProvider.signOut();
               if (context.mounted) {
+                context.read<CategoryProvider>().clear();
+                context.read<TransactionProvider>().clear();
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Başarıyla çıkış yapıldı.'),
