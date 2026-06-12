@@ -8,6 +8,7 @@ import '../providers/category_provider.dart';
 import '../providers/settings_provider.dart';
 import '../models/category.dart';
 import '../utils/currency_formatter.dart';
+import '../widgets/ai_advisor_bottom_sheet.dart';
 
 Color _hexToColor(String hexString) {
   final buffer = StringBuffer();
@@ -400,10 +401,41 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     if (maxBarValue == 0) maxBarValue = 100;
     maxBarValue = (maxBarValue * 1.2); // Üstte biraz boşluk kalsın
 
+    // Kategori isimleriyle map olustur
+    final Map<String, double> categoryNameTotals = {};
+    for (var entry in categoryTotals.entries) {
+      Category? cat;
+      try {
+        cat = catProvider.categories.firstWhere((c) => c.id == entry.key);
+      } catch (_) {
+        cat = Category(name: 'Bilinmeyen', type: 'gider', color: '#9E9E9E');
+      }
+      categoryNameTotals[cat.name] = entry.value;
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('İstatistikler'),
         centerTitle: true,
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (context) => FractionallySizedBox(
+              heightFactor: 0.8,
+              child: AiAdvisorBottomSheet(
+                totalIncome: totalMonthlyIncome,
+                totalExpense: totalMonthlyExpense,
+                expensesByCategory: categoryNameTotals,
+              ),
+            ),
+          );
+        },
+        icon: const Icon(Icons.auto_awesome),
+        label: const Text('Yapay Zeka\'ya Danış'),
       ),
       body: Container(
         decoration: BoxDecoration(

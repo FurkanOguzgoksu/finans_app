@@ -79,8 +79,11 @@ OUTPUT FORMAT:
         }
       } catch (e) {
         lastError = e.toString();
-        // Eğer hata modeli bulamamakla ilgiliyse diğer modele geç, değilse fırlat
-        if (!lastError.contains('not found') && !lastError.contains('v1beta')) {
+        // Eğer hata modeli bulamamak, 503 (yüksek talep) veya 429 ise diğer modele geç, değilse fırlat
+        if (!lastError!.contains('not found') && 
+            !lastError!.contains('v1beta') && 
+            !lastError!.contains('503') && 
+            !lastError!.contains('429')) {
            throw Exception('Yapay zeka hatası: $e');
         }
       }

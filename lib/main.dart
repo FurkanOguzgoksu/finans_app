@@ -16,6 +16,8 @@ import 'providers/settings_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/ocr_provider.dart';
 import 'utils/app_theme.dart';
+import 'services/notification_service.dart';
+import 'widgets/app_lock_wrapper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -52,6 +54,11 @@ void main() async {
 
   // Supabase başlatma
   await SupabaseService.initialize();
+
+  // Bildirim Servisini Başlat ve Kur
+  final notificationService = NotificationService();
+  await notificationService.init();
+  await notificationService.requestPermissions();
 
   runApp(
     MultiProvider(
@@ -122,6 +129,11 @@ class _FinansAppState extends State<FinansApp> {
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
       routerConfig: _router,
+      builder: (context, child) {
+        return AppLockWrapper(
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
     );
   }
 }

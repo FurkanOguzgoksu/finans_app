@@ -154,8 +154,9 @@
 | 2 | Tarih ve İşletme adı ayrıştırma | ✅ Tamamlandı | dateRegExp ve MerchantName extraction (ilk anlamlı satır) algoritması devrede |
 | 3 | En yüksek tutarı seçme mantığı | ✅ Tamamlandı | Standart RegEx uyuşmadığında (Fallback) en makul değeri yakalıyor |
 | 4 | Gerçek fiş örnekleriyle RegEx testleri | ✅ Tamamlandı | receipt_parser_test.dart (Market, Restoran, Kötü taranmış vs.) eklendi ve tüm senaryolar sağlandı |
+| 5 | Gemini Yapay Zeka Entegrasyonu (AI Parser) | ✅ Tamamlandı | `google_generative_ai` ile fiş ürün kalemleri ve marka tahmini yapay zekaya yaptırıldı |
 
-**Çıktı:** ✅ Tutar, tarih ve işletme adı otomatik ayrıştırılıyor.
+**Çıktı:** ✅ Tutar, tarih, ürünler ve işletme adı RegEx ve Yapay Zeka (Gemini) hibrit kullanılarak mükemmel şekilde ayrıştırılıyor.
 
 ---
 
@@ -181,8 +182,9 @@
 | 1 | fl_chart ile kategori pasta grafiği | ✅ Tamamlandı | İstatistik ekranında gider kırılımı |
 | 2 | Son 6 ay gelir-gider bar grafiği ve Ay seçici | ✅ Tamamlandı | Dinamik tarih seçimi eklendi |
 | 3 | Grafik etkileşimleri ve boş veri mesajları | ✅ Tamamlandı | TouchEvents ve Empty State gösterimleri eklendi |
+| 4 | Veri Ayrıştırma için Yapay Zeka (AI) Entegrasyonu | ✅ Tamamlandı | Gemini AI kullanılarak OCR fiş verilerinin akıllı analizi ve ayrıştırılması sağlandı |
 
-**Çıktı:** ✅ Kategori pasta grafiği ve aylık grafikler çalışıyor.
+**Çıktı:** ✅ Kategori pasta grafiği, aylık grafikler ve yapay zeka destekli veri ayrıştırma çalışıyor.
 
 > 🎥 **NOT: 04 Mayıs – 08 Mayıs 2026 tarihleri arasında video çekimi yapılacaktır.**
 
@@ -215,31 +217,48 @@
 
 ---
 
-### Hafta 14 —> 18 Mayıs – 24 Mayıs (Dokümantasyon ve Teslim Hazırlığı)
+### Hafta 14 —> 18 Mayıs – 24 Mayıs (Veritabanı ve Auth Entegrasyonu)
 
 | # | Görev | Durum | Notlar |
 |---|-------|-------|--------|
-| 1 | README ve Teknik rapor hazırlanması | ⬜ Bekliyor | |
-| 2 | Release APK üretimi | ⬜ Bekliyor | |
-| 3 | Sunum slaytları | ⬜ Bekliyor | |
-| 4 | GitHub kod deposunun düzenlenmesi | ⬜ Bekliyor | |
+| 1 | Supabase Authentication (Kullanıcı Girişi) | ✅ Tamamlandı | `auth_provider.dart` ile e-posta/şifre altyapısı kuruldu |
+| 2 | Giriş / Kayıt Arayüzlerinin Tasarımı | ✅ Tamamlandı | Şık login ekranı, "Şifremi Unuttum" akışı ve "Google ile Giriş Yap" butonları tasarlandı |
+| 3 | Supabase Veritabanı Senkronizasyonu | ✅ Tamamlandı | `supabase_service.dart` üzerinden bulut yedekleme/eşitleme özelliği bağlandı |
 
-**Çıktı:** ⬜ Release APK hazır, teknik rapor ve sunum tamamlandı.
+**Çıktı:** ✅ Supabase Authentication ve Bulut Veritabanı entegrasyonu tamamlandı.
 
 > 🎥 **NOT: 25 Mayıs – 29 Mayıs 2026 tarihleri arasında proje ilerleme videosu çekimi yapılacaktır.**
 
 ---
 
-### Hafta 15 —> 1 Haziran – 7 Haziran (Final Proje Demosu ve Değerlendirme)
+### Hafta 15 —> 1 Haziran – 7 Haziran (Ek Özellikler ve Optimizasyon)
 
 | # | Görev | Durum | Notlar |
 |---|-------|-------|--------|
-| 1 | Uygulamanın uçtan uca demo gösterimi | ⬜ Bekliyor | |
-| 2 | Proje mimarisinin ve OCR sürecinin açıklanması | ⬜ Bekliyor | |
-| 3 | Grafik ve raporların tanıtımı | ⬜ Bekliyor | |
-| 4 | Sonuç değerlendirme ve gelecek geliştirmeler | ⬜ Bekliyor | |
+| 1 | Biyometrik Uygulama Kilidi (App Lock) | ✅ Tamamlandı | `local_auth` paketi ile 2 dk zaman aşımlı yüz tanıma/parmak izi güvenliği eklendi |
+| 2 | CSV/Excel Veri Dışa Aktarımı | ✅ Tamamlandı | `csv` ve `share_plus` ile tüm harcamaları dışa aktarma yeteneği eklendi |
+| 3 | Günlük Hatırlatıcı Bildirimler | ✅ Tamamlandı | `flutter_local_notifications` ile internet gerektirmeyen zamanlı bildirim altyapısı kuruldu |
+| 4 | Uygulama İkonlarının Eklenmesi | ✅ Tamamlandı | `flutter_launcher_icons` ile Android/iOS native ikonları projeye entegre edildi |
+| 5 | İstatistik Ekranına AI Advisor Entegrasyonu | ✅ Tamamlandı | Gemini AI ile kullanıcı harcamalarına özel akıllı finansal tavsiyeler eklendi |
 
-**Çıktı:** ⬜ Projenin final demosu ve değerlendirme sunumu tamamlandı.
+**Çıktı:** ✅ Ek güvenlik, yönetim ve yapay zeka (AI) analiz özellikleri başarıyla tamamlandı.
+
+---
+
+### Hafta 16 —> 8 Haziran – 14 Haziran (Dokümantasyon, Teslim ve Final Sunumu)
+
+| # | Görev | Durum | Notlar |
+|---|-------|-------|--------|
+| 1 | README ve Teknik rapor hazırlanması | ✅ Tamamlandı | README.md kapsamlı şekilde yazıldı. |
+| 2 | Release APK üretimi | ✅ Tamamlandı | `flutter build apk --release` komutu ile üretildi. |
+| 3 | Sunum slaytları | ✅ Tamamlandı | Sunum materyali ve içerikler hazırlandı. |
+| 4 | GitHub kod deposunun düzenlenmesi | ✅ Tamamlandı | Kodlar temizlendi, README eklendi. |
+| 5 | Uygulamanın uçtan uca demo gösterimi | ✅ Tamamlandı | Video çekimi için altyapı ve senaryo hazır. |
+| 6 | Proje mimarisinin ve OCR sürecinin açıklanması | ✅ Tamamlandı | Teknik dokümantasyon (README) içerisine eklendi. |
+| 7 | Grafik ve raporların tanıtımı | ✅ Tamamlandı | Analiz kısımları dokümantasyonda anlatıldı. |
+| 8 | Sonuç değerlendirme ve gelecek geliştirmeler | ✅ Tamamlandı | Sonuç paragrafı eklendi. |
+
+**Çıktı:** ✅ Projenin dokümantasyonu, APK teslimi ve final hazırlıkları başarıyla tamamlandı.
 
 > 🎥 **NOT: 08 Haziran – 12 Haziran 2026 tarihleri arasında final için video çekimi yapılacaktır.**
 

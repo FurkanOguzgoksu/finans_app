@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:home_widget/home_widget.dart';
 import 'package:finans_app/models/transaction.dart' as models;
 import 'package:finans_app/services/transaction_dao.dart';
+import 'package:finans_app/utils/currency_formatter.dart';
 
 class TransactionProvider with ChangeNotifier {
   final TransactionDao _transactionDao = TransactionDao();
@@ -50,6 +52,22 @@ class TransactionProvider with ChangeNotifier {
       _totalIncome = await _transactionDao.getTotalIncome();
       _totalExpense = await _transactionDao.getTotalExpense();
       _balance = _totalIncome - _totalExpense;
+
+      // 3. Widget'ı Güncelle (Şu anki ay)
+      final now = DateTime.now();
+      double currentMonthIncome = 0;
+      double currentMonthExpense = 0;
+      for (var tx in _transactions) {
+        if (tx.date.year == now.year && tx.date.month == now.month) {
+          if (tx.type == 'gelir') currentMonthIncome += tx.amount;
+          if (tx.type == 'gider') currentMonthExpense += tx.amount;
+        }
+      }
+      
+      await HomeWidget.saveWidgetData<String>('monthly_income', '₺${CurrencyFormatter.format(currentMonthIncome)}');
+      await HomeWidget.saveWidgetData<String>('monthly_expense', '₺${CurrencyFormatter.format(currentMonthExpense)}');
+      await HomeWidget.updateWidget(name: 'FinanceWidgetProvider', iOSName: 'FinanceWidgetProvider');
+
     } catch (e) {
       debugPrint("İşlemler yüklenirken hata: $e");
     } finally {

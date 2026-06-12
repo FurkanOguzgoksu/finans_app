@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../services/notification_service.dart';
 
 /// Kullanıcı ayarlarını yöneten Provider
 /// Aylık gelir, para birimi, tekrarlayan gelir bilgilerini SharedPreferences ile saklar
@@ -16,6 +17,13 @@ class SettingsProvider extends ChangeNotifier {
   int? _incomeCategoryId;        // Gelir kategorisi ID
   String _incomeTitle = 'Aylık Maaş'; // İşlem başlığı
 
+  // Bildirim ayarları
+  bool _notificationsEnabled = true;
+  List<String> _notificationTimes = ['12:30', '20:30']; // Varsayılan 2 saat
+
+  // Güvenlik ayarları
+  bool _appLockEnabled = false;
+
   double get monthlyIncome => _monthlyIncome;
   String get currency => _currency;
   String get userName => _userName;
@@ -26,6 +34,11 @@ class SettingsProvider extends ChangeNotifier {
   String get lastIncomeMonth => _lastIncomeMonth;
   int? get incomeCategoryId => _incomeCategoryId;
   String get incomeTitle => _incomeTitle;
+  
+  bool get notificationsEnabled => _notificationsEnabled;
+  List<String> get notificationTimes => _notificationTimes;
+  
+  bool get appLockEnabled => _appLockEnabled;
 
   /// Tekrarlayan gelir tam olarak ayarlanmış mı?
   bool get hasRecurringIncome =>
@@ -48,7 +61,27 @@ class SettingsProvider extends ChangeNotifier {
     final catId = prefs.getInt('income_category_id');
     _incomeCategoryId = catId;
     _incomeTitle = prefs.getString('income_title') ?? 'Aylık Maaş';
+    
+    _notificationsEnabled = prefs.getBool('notifications_enabled') ?? true;
+    _notificationTimes = prefs.getStringList('notification_times') ?? ['12:30', '20:30'];
+    
+    _appLockEnabled = prefs.getBool('app_lock_enabled') ?? false;
+
+    _applyNotificationSettings();
     notifyListeners();
+  }
+
+  /// Bildirim ayarlarını NotificationService'e uygular
+  void _applyNotificationSettings() {
+    if (_notificationsEnabled) {
+      final times = _notificationTimes.map((t) {
+        final parts = t.split(':');
+        return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
+      }).toList();
+      NotificationService().scheduleDailyReminders(times);
+    } else {
+      NotificationService().cancelAllNotifications();
+    }
   }
 
   /// Aylık geliri günceller ve kaydeder
@@ -116,5 +149,31 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('user_photo_path', path);
+  }
+
+  /// Bildirim durumunu günceller ve kaydeder
+  Future<void> setNotificationsEnabled(bool enabled) async {
+    _notificationsEnabled = enabled;
+    _applyNotificationSettings();
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('notifications_enabled', enabled);
+  }
+
+  /// Bildirim saatlerini günceller ve kaydeder
+  Future<void> setNotificationTimes(List<String> times) async {
+    _notificationTimes = times;
+    _applyNotificationSettings();
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('notification_times', times);
+  }
+
+  /// Uygulama kilidi durumunu günceller ve kaydeder
+  Future<void> setAppLockEnabled(bool enabled) async {
+    _appLockEnabled = enabled;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('app_lock_enabled', enabled);
   }
 }

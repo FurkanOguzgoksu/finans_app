@@ -3,11 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:local_auth/local_auth.dart';
+import '../providers/theme_provider.dart';
+import '../providers/settings_provider.dart';
 import '../providers/theme_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/transaction_provider.dart';
 import '../providers/category_provider.dart';
 import '../providers/auth_provider.dart';
+import '../services/export_service.dart';
 import '../widgets/loading_overlay.dart';
 import '../models/transaction.dart' as models;
 import '../utils/currency_formatter.dart';
@@ -37,7 +41,9 @@ class SettingsScreen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 20),
         children: [
           _buildProfileCard(context, theme),
+          _buildSecurityCard(context, theme),
           _buildAppearanceCard(context, theme),
+          _buildNotificationsCard(context, theme),
           _buildFinancialCard(context, theme),
           _buildManagementCard(context, theme),
           _buildAboutCard(context, theme),
@@ -335,6 +341,150 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildSecurityCard(BuildContext context, ThemeData theme) {
+    return Consumer<SettingsProvider>(
+      builder: (context, settings, child) {
+        return _buildSettingsCard(
+          title: 'GÜVENLİK',
+          theme: theme,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.fingerprint,
+                      size: 22,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                    ),
+                    const SizedBox(width: 16),
+                    const Text(
+                      'Biyometrik Uygulama Kilidi',
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+                Switch(
+                  value: settings.appLockEnabled,
+                  onChanged: (value) async {
+                    if (value) {
+                      // Açılmaya çalışıldığında doğrula
+                      final LocalAuthentication auth = LocalAuthentication();
+                      try {
+                        final authenticated = await auth.authenticate(
+                          localizedReason: 'Uygulama kilidini aktif etmek için doğrulama yapın',
+                          persistAcrossBackgrounding: true,
+                          biometricOnly: false,
+                        );
+                        if (authenticated) {
+                          settings.setAppLockEnabled(true);
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Doğrulama yapılamadı, kilit aktif edilemedi.')),
+                          );
+                        }
+                      }
+                    } else {
+                      // Kapatılırken direkt kapat
+                      settings.setAppLockEnabled(false);
+                    }
+                  },
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildNotificationsCard(BuildContext context, ThemeData theme) {
+    return Consumer<SettingsProvider>(
+      builder: (context, settings, child) {
+        return _buildSettingsCard(
+          title: 'BİLDİRİMLER',
+          theme: theme,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.notifications_active_outlined,
+                      size: 22,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                    ),
+                    const SizedBox(width: 16),
+                    const Text(
+                      'Günlük Hatırlatıcılar',
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+                Switch(
+                  value: settings.notificationsEnabled,
+                  onChanged: (value) => settings.setNotificationsEnabled(value),
+                ),
+              ],
+            ),
+            if (settings.notificationsEnabled) ...[
+              const Divider(height: 24),
+              const Text(
+                'Hatırlatma Saatleri',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  ...settings.notificationTimes.map((time) {
+                    return InputChip(
+                      label: Text(time),
+                      avatar: const Icon(Icons.access_time, size: 16),
+                      onDeleted: settings.notificationTimes.length > 1
+                          ? () {
+                              final times = List<String>.from(settings.notificationTimes);
+                              times.remove(time);
+                              settings.setNotificationTimes(times);
+                            }
+                          : null, // En az 1 saat kalmalı
+                    );
+                  }).toList(),
+                  if (settings.notificationTimes.length < 3)
+                    ActionChip(
+                      label: const Text('Saat Ekle'),
+                      avatar: const Icon(Icons.add, size: 16),
+                      onPressed: () async {
+                        final time = await showTimePicker(
+                          context: context,
+                          initialTime: TimeOfDay.now(),
+                        );
+                        if (time != null) {
+                          final hourStr = time.hour.toString().padLeft(2, '0');
+                          final minStr = time.minute.toString().padLeft(2, '0');
+                          final newTime = '$hourStr:$minStr';
+                          final times = List<String>.from(settings.notificationTimes);
+                          if (!times.contains(newTime)) {
+                            times.add(newTime);
+                            settings.setNotificationTimes(times);
+                          }
+                        }
+                      },
+                    ),
+                ],
+              ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
   Widget _buildFinancialCard(BuildContext context, ThemeData theme) {
     return Consumer2<SettingsProvider, TransactionProvider>(
       builder: (context, settings, provider, child) {
@@ -388,10 +538,49 @@ class SettingsScreen extends StatelessWidget {
           title: 'Veri Yedekleme',
           theme: theme,
           onTap: () => context.push('/backup_settings'),
+        ),
+        const Divider(height: 1),
+        _buildListItem(
+          icon: Icons.import_export_outlined,
+          title: 'Dışa Aktar (Excel/CSV)',
+          subtitle: 'Tüm harcamalarınızı tablo olarak kaydedin',
+          theme: theme,
+          onTap: () => _exportToCSV(context),
           showDivider: false,
         ),
       ],
     );
+  }
+
+  Future<void> _exportToCSV(BuildContext context) async {
+    final transactionProvider = Provider.of<TransactionProvider>(context, listen: false);
+    final categoryProvider = Provider.of<CategoryProvider>(context, listen: false);
+
+    if (transactionProvider.transactions.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Dışa aktarılacak harcama bulunamadı.')),
+      );
+      return;
+    }
+
+    try {
+      final exportService = ExportService();
+      await exportService.exportTransactionsToCSV(
+        transactions: transactionProvider.transactions,
+        categories: categoryProvider.categories,
+      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Harcamalarınız başarıyla dışa aktarıldı.')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Hata: $e')),
+        );
+      }
+    }
   }
 
   Widget _buildAppearanceCard(BuildContext context, ThemeData theme) {
