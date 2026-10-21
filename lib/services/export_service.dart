@@ -54,9 +54,11 @@ class ExportService {
       await file.writeAsString(csv);
 
       // Paylaşım menüsünü aç
-      await Share.shareXFiles(
-        [XFile(path)],
-        text: 'Finansal Rapor (CSV Formatında)',
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(path)],
+          text: 'Finansal Rapor (CSV Formatında)',
+        ),
       );
     } catch (e) {
       throw Exception('Dışa aktarım sırasında bir hata oluştu: $e');

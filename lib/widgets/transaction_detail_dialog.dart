@@ -29,20 +29,30 @@ class TransactionDetailDialog extends StatelessWidget {
             child: const Text('İptal'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               if (transaction.id != null) {
-                Provider.of<TransactionProvider>(
+                final provider = Provider.of<TransactionProvider>(
                   context,
                   listen: false,
-                ).deleteTransaction(transaction.id!);
+                );
+                final messenger = ScaffoldMessenger.of(context);
 
                 // Önce onay penceresini, sonra detay penceresini kapat
                 Navigator.of(ctx).pop();
                 Navigator.of(context).pop();
 
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(const SnackBar(content: Text('İşlem silindi.')));
+                try {
+                  await provider.deleteTransaction(transaction.id!);
+                  messenger.showSnackBar(const SnackBar(content: Text('İşlem silindi.')));
+                } catch (e) {
+                  debugPrint('İşlem silinemedi: $e');
+                  messenger.showSnackBar(
+                    const SnackBar(
+                      content: Text('İşlem silinemedi. İnternet bağlantınızı kontrol edin.'),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                }
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
@@ -207,7 +217,20 @@ class TransactionDetailDialog extends StatelessWidget {
                 builder: (context) {
                   final isPdf = transaction.receiptId!.toLowerCase().endsWith('.pdf');
                   return InkWell(
-                    onTap: () {
+                    onTap: () async {
+                      // Dosya bu cihazda kayıtlı; başka cihazda veya uygulama
+                      // yeniden kurulduktan sonra bulunamayabilir
+                      final file = File(transaction.receiptId!);
+                      if (!await file.exists()) {
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Fiş dosyası bu cihazda bulunamadı.'),
+                          ),
+                        );
+                        return;
+                      }
+                      if (!context.mounted) return;
                       if (isPdf) {
                         OpenFilex.open(transaction.receiptId!);
                       } else {
@@ -223,9 +246,16 @@ class TransactionDetailDialog extends StatelessWidget {
                                   minScale: 1.0,
                                   maxScale: 4.0,
                                   child: Image.file(
-                                    File(transaction.receiptId!),
+                                    file,
                                     width: double.infinity,
                                     fit: BoxFit.contain,
+                                    errorBuilder: (_, _, _) => const Padding(
+                                      padding: EdgeInsets.all(32),
+                                      child: Text(
+                                        'Fiş görseli açılamadı.',
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
                                   ),
                                 ),
                                 Positioned(

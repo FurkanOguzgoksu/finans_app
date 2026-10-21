@@ -258,7 +258,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     } else if (_selectedMonth.isBefore(DateTime(now.year, now.month, 1))) {
       daysElapsed = DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0).day;
     } else {
-      daysElapsed = DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0).day;
+      daysElapsed = 0; // Gelecek ay: henüz geçen gün yok, ortalama hesaplanmaz
     }
     final dailyAverage = daysElapsed > 0 ? totalMonthlyExpense / daysElapsed : 0.0;
 
@@ -410,7 +410,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       } catch (_) {
         cat = Category(name: 'Bilinmeyen', type: 'gider', color: '#9E9E9E');
       }
-      categoryNameTotals[cat.name] = entry.value;
+      // Aynı adlı kategoriler (ör. birden fazla "Bilinmeyen") üst üste yazılmasın, toplansın
+      categoryNameTotals[cat.name] = (categoryNameTotals[cat.name] ?? 0) + entry.value;
     }
 
     return Scaffold(
@@ -419,6 +420,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         centerTitle: true,
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'statistics_fab',
         onPressed: () {
           showModalBottomSheet(
             context: context,

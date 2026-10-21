@@ -1,28 +1,43 @@
 import 'package:finans_app/models/transaction.dart';
 import 'package:finans_app/repositories/transaction_repository.dart';
 import 'package:finans_app/services/supabase_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestFilterBuilder;
 
 /// Transaction Data Access Object - Supabase üzerinden İşlem CRUD operasyonları
+///
+/// Erişim RLS ile kullanıcının kendi kayıtlarıyla sınırlıdır; sorgular ayrıca
+/// user_id ile filtrelenir (ek güvenlik ve indeks kullanımı için).
 class TransactionDao implements TransactionRepository {
   final String _tableName = 'transactions';
   final _client = SupabaseService.client;
 
-  @override
-  Future<List<Transaction>> getAll() async {
-    final response = await _client
+  /// Kullanıcının kayıtlarını sorgulamaya başlar
+  PostgrestFilterBuilder<List<Map<String, dynamic>>> _select([String columns = '*']) {
+    return _client
         .from(_tableName)
-        .select()
-        .order('date', ascending: false);
-    return response.map((map) => Transaction.fromMap(map)).toList();
+        .select(columns)
+        .eq('user_id', SupabaseService.currentUserId);
+  }
+
+  /// Sorgunun tüm sayfalarını tarihe göre (yeniden eskiye) sıralı çeker
+  Future<List<Transaction>> _fetchAll(
+    PostgrestFilterBuilder<List<Map<String, dynamic>>> Function() query,
+  ) async {
+    final rows = await SupabaseService.fetchAllPages(
+      (from, to) => query()
+          .order('date', ascending: false)
+          .order('id', ascending: false)
+          .range(from, to),
+    );
+    return rows.map((map) => Transaction.fromMap(map)).toList();
   }
 
   @override
+  Future<List<Transaction>> getAll() => _fetchAll(() => _select());
+
+  @override
   Future<Transaction?> getById(int id) async {
-    final response = await _client
-        .from(_tableName)
-        .select()
-        .eq('id', id)
-        .maybeSingle();
+    final response = await _select().eq('id', id).maybeSingle();
 
     if (response != null) {
       return Transaction.fromMap(response);
@@ -31,40 +46,24 @@ class TransactionDao implements TransactionRepository {
   }
 
   @override
-  Future<List<Transaction>> getByType(String type) async {
-    final response = await _client
-        .from(_tableName)
-        .select()
-        .eq('type', type)
-        .order('date', ascending: false);
-    return response.map((map) => Transaction.fromMap(map)).toList();
-  }
+  Future<List<Transaction>> getByType(String type) =>
+      _fetchAll(() => _select().eq('type', type));
 
   @override
-  Future<List<Transaction>> getByCategoryId(int categoryId) async {
-    final response = await _client
-        .from(_tableName)
-        .select()
-        .eq('category_id', categoryId)
-        .order('date', ascending: false);
-    return response.map((map) => Transaction.fromMap(map)).toList();
-  }
+  Future<List<Transaction>> getByCategoryId(int categoryId) =>
+      _fetchAll(() => _select().eq('category_id', categoryId));
 
   @override
-  Future<List<Transaction>> getByDateRange(DateTime start, DateTime end) async {
-    final response = await _client
-        .from(_tableName)
-        .select()
-        .gte('date', start.toIso8601String())
-        .lte('date', end.toIso8601String())
-        .order('date', ascending: false);
-    return response.map((map) => Transaction.fromMap(map)).toList();
-  }
+  Future<List<Transaction>> getByDateRange(DateTime start, DateTime end) =>
+      _fetchAll(() => _select()
+          .gte('date', start.toIso8601String())
+          .lte('date', end.toIso8601String()));
 
   @override
   Future<int> insert(Transaction transaction) async {
     final data = transaction.toMap();
     data.remove('id'); // Supabase auto-generates the ID
+    data['user_id'] = SupabaseService.currentUserId;
     final response = await _client
         .from(_tableName)
         .insert(data)
@@ -77,16 +76,23 @@ class TransactionDao implements TransactionRepository {
   Future<int> update(Transaction transaction) async {
     if (transaction.id == null) return 0;
 
+    final data = transaction.toMap();
+    data.remove('id'); // Kimlik değişmez; yalnızca filtrede kullanılır
     await _client
         .from(_tableName)
-        .update(transaction.toMap())
-        .eq('id', transaction.id!);
+        .update(data)
+        .eq('id', transaction.id!)
+        .eq('user_id', SupabaseService.currentUserId);
     return 1;
   }
 
   @override
   Future<int> delete(int id) async {
-    await _client.from(_tableName).delete().eq('id', id);
+    await _client
+        .from(_tableName)
+        .delete()
+        .eq('id', id)
+        .eq('user_id', SupabaseService.currentUserId);
     return 1;
   }
 
@@ -106,19 +112,18 @@ class TransactionDao implements TransactionRepository {
     DateTime? start,
     DateTime? end,
   }) async {
-    var query = _client.from(_tableName).select('amount').eq('type', type);
-
-    if (start != null && end != null) {
-      query = query
-          .gte('date', start.toIso8601String())
-          .lte('date', end.toIso8601String());
-    }
-
-    final response = await query;
-    if (response.isEmpty) return 0.0;
+    final rows = await SupabaseService.fetchAllPages((from, to) {
+      var query = _select('id, amount').eq('type', type);
+      if (start != null && end != null) {
+        query = query
+            .gte('date', start.toIso8601String())
+            .lte('date', end.toIso8601String());
+      }
+      return query.order('id').range(from, to);
+    });
 
     double total = 0.0;
-    for (var row in response) {
+    for (var row in rows) {
       total += (row['amount'] as num).toDouble();
     }
     return total;

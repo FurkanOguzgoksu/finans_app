@@ -4,10 +4,10 @@ Smart Financial Analysis, kullanıcıların kişisel finans yönetimini kolayla�
 
 ## ✨ Temel Özellikler
 
-- **📸 Akıllı Fiş Tarama (OCR):** Google ML Kit ve Gemini AI ile kamera veya galeriden seçilen fişlerdeki toplam tutar, tarih ve marka bilgisini saniyeler içinde ayıklar.
+- **📸 Akıllı Fiş Tarama (OCR):** Google ML Kit ve Gemini AI ile kamera veya galeriden seçilen fişlerdeki ve PDF faturalardaki toplam tutar, tarih ve marka bilgisini saniyeler içinde ayıklar.
 - **☁️ Bulut Senkronizasyonu & Güvenlik:** Supabase entegrasyonu ile cihazlar arası güvenli veri eşitleme. E-posta/şifre girişi ve App Lock (Biyometrik Yüz/Parmak İzi kilidi).
-- **📈 Kapsamlı Analiz, Grafikler ve AI Danışman:** `fl_chart` kullanılarak hazırlanan pasta (gider kırılımı), bar (aylık karşılaştırma) ve çizgi (trend) grafikleri. Tasarruf uyarıları ve Gemini AI destekli kişiselleştirilmiş finansal tavsiyeler (AI Advisor).
-- **📤 Veri Dışa Aktarımı:** Tüm harcama geçmişini CSV veya Excel formatında tek tıkla dışa aktarabilme.
+- **📈 Kapsamlı Analiz, Grafikler ve AI Danışman:** `fl_chart` kullanılarak hazırlanan pasta (gelir/gider kırılımı) ve bar (aylık karşılaştırma) grafikleri. Tasarruf uyarıları ve Gemini AI destekli kişiselleştirilmiş finansal tavsiyeler (AI Advisor).
+- **📤 Veri Dışa Aktarımı ve Yedekleme:** Tüm harcama geçmişini Excel'de açılabilen CSV formatında tek tıkla dışa aktarabilme; JSON yedek dosyası oluşturup geri yükleyebilme.
 - **🔔 Hatırlatıcılar:** Günlük harcama girişi için yerel bildirim altyapısı.
 - **🎨 Modern Arayüz:** Karanlık/Aydınlık tema desteği, cam efekti (glassmorphism) tasarımlar ve akıcı animasyonlar.
 
@@ -16,8 +16,8 @@ Smart Financial Analysis, kullanıcıların kişisel finans yönetimini kolayla�
 Proje kod yapısı ayrık katmanlı bir mimari (Layered Architecture) etrafında şekillenmiştir:
 - **UI (Arayüz):** Ekranlar (`screens/`) ve yeniden kullanılabilir bileşenler (`widgets/`).
 - **State Management:** `provider` tabanlı reaktif yapı. Veri değiştiğinde sadece ilgili arayüz güncellenir (`providers/`).
-- **Services (İş Mantığı & Servisler):** Dış dünyaya veya donanıma erişen modüller. (`ocr_service`, `supabase_service`, `database_service`).
-- **Veri Katmanı (DAO & SQLite):** Veritabanı okuma/yazma işlemleri Data Access Object pattern'i ile soyutlanmıştır.
+- **Services (İş Mantığı & Servisler):** Dış dünyaya veya donanıma erişen modüller. (`ocr_service`, `ai_parser_service`, `supabase_service`, `notification_service`).
+- **Veri Katmanı (Repository & DAO):** Kategori ve işlem verileri Supabase (PostgreSQL) üzerinde tutulur. Okuma/yazma işlemleri Repository arayüzleri (`repositories/`) ve Data Access Object sınıfları (`category_dao`, `transaction_dao`) ile soyutlanmıştır.
 
 ## 🔍 OCR ve Veri Ayrıştırma Akışı
 
@@ -25,20 +25,28 @@ Fiziksel fişlerin dijitale dönüştürülme süreci 4 aşamadan oluşur:
 1. **Görsel Seçimi:** Kullanıcı kameradan fişi çeker veya galeriden seçer (`image_picker`). Gerekirse kenarlar kırpılır (`image_cropper`).
 2. **Metin Tanıma (OCR):** Görsel cihaz içinde, internetsiz olarak Google ML Kit `TextRecognizer` modeline verilir ve ham metin (String) elde edilir.
 3. **Ayrıştırma (Regex & AI):** Özel geliştirilmiş Regex algoritmaları ve Gemini AI entegrasyonu sayesinde ham metin taranır. "TOPLAM", "Tarih", İşletme adı (ilk satırlar) bulunur. Akıllı eşleştirme ile kahve markaları yemeğe, benzin istasyonları ulaşıma atanır.
-4. **Onay ve Kayıt:** Ayrıştırılmış veri kullanıcıya sunulur. Kullanıcı eksikleri tamamlar veya düzenler, SQLite ve Supabase'e kaydedilir.
+4. **Onay ve Kayıt:** Ayrıştırılmış veri kullanıcıya sunulur. Kullanıcı eksikleri tamamlar veya düzenler, işlem Supabase'e kaydedilir. Fişin fotoğrafı veya PDF'i cihazda saklanır ve işleme bağlanır.
 
 ## 🚀 Kurulum
 
 1. **Flutter SDK**'nın güncel versiyonunun bilgisayarınızda kurulu olduğundan emin olun (`>=3.8.1`).
-2. Projeyi klonlayın: `git clone https://github.com/kullaniciadi/finans_app.git`
+2. Projeyi klonlayın: `git clone https://github.com/FurkanOguzgoksu/finans_app.git`
 3. Bağımlılıkları yükleyin:
    ```bash
    flutter pub get
    ```
-4. Uygulamayı çalıştırın:
+4. (İsteğe bağlı) Yapay zeka özellikleri için `assets/env/.env.example` dosyasını `assets/env/.env` olarak kopyalayıp `GEMINI_API_KEY` değerini girin. Dosya olmadan da proje derlenir; yalnızca AI özellikleri uyarı verir.
+5. Uygulamayı çalıştırın:
    ```bash
    flutter run
    ```
+
+### ☁️ Supabase Kurulumu
+
+1. [Supabase](https://supabase.com) üzerinde bir proje oluşturun ve **SQL Editor**'de `supabase/schema.sql` dosyasının içeriğini çalıştırın. Betik tabloları, satır bazlı güvenlik (RLS) politikalarını ve indeksleri kurar; mevcut bir projede tekrar çalıştırılabilir ve kayıtları silmez.
+2. `lib/services/supabase_service.dart` içindeki proje URL'si ve `anon` anahtarını kendi projenizinkilerle değiştirin.
+3. Google ile giriş için **Authentication → URL Configuration → Redirect URLs** listesine `finansapp://login-callback` adresini ekleyin ve **Authentication → Providers** altında Google'ı etkinleştirin.
+4. **Authentication → Providers → Email** altında "Confirm email" açıksa, kullanıcılar kayıttan sonra e-postalarını doğrulayıp giriş yapar.
 
 ## 📦 Sürüm (Release) APK Alma
 
@@ -54,4 +62,3 @@ Bu proje, akademik bir çalışmadan çıkarak son kullanıcıya doğrudan fayda
 **Gelecekte Eklenebilecekler:**
 - **Çoklu Para Birimi:** Canlı kur çevirisi ile yurtdışı harcamalarının entegrasyonu.
 - **Paylaşımlı Bütçe:** Aile veya ev arkadaşları için ortak harcama havuzları.
-- **Fatura Taraması:** Fişlerin yanı sıra A4 fatura okuma kabiliyetinin gelişmiş PDF ayrıştırma ile sağlanması.

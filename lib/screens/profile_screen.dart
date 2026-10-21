@@ -174,31 +174,13 @@ class ProfileScreen extends StatelessWidget {
                               );
 
                           if (source != null) {
-                            PermissionStatus status;
-                            bool isGranted = false;
-
+                            // Galeri için izin gerekmez (image_picker sistem
+                            // fotoğraf seçicisini kullanır); kamera izni istenir.
+                            PermissionStatus status = PermissionStatus.granted;
                             if (source == ImageSource.camera) {
                               status = await Permission.camera.request();
-                              isGranted = status.isGranted;
-                            } else {
-                              if (Platform.isAndroid) {
-                                final photosStatus = await Permission.photos
-                                    .request();
-                                final storageStatus = await Permission.storage
-                                    .request();
-                                isGranted =
-                                    photosStatus.isGranted ||
-                                    storageStatus.isGranted;
-                                status =
-                                    photosStatus.isPermanentlyDenied ||
-                                        storageStatus.isPermanentlyDenied
-                                    ? PermissionStatus.permanentlyDenied
-                                    : photosStatus;
-                              } else {
-                                status = await Permission.photos.request();
-                                isGranted = status.isGranted;
-                              }
                             }
+                            final isGranted = status.isGranted;
 
                             if (isGranted) {
                               final picker = ImagePicker();

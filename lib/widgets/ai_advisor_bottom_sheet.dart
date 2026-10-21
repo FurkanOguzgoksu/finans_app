@@ -70,7 +70,7 @@ class _AiAdvisorBottomSheetState extends State<AiAdvisorBottomSheet> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: theme.colorScheme.onSurface.withOpacity(0.2),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -113,7 +113,7 @@ class _AiAdvisorBottomSheetState extends State<AiAdvisorBottomSheet> {
           Text(
             'Harcamalarınız analiz ediliyor...\nLütfen bekleyin.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.7)),
+            style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
           ),
           const SizedBox(height: 32),
         ],

@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
-import '../providers/category_provider.dart';
-import '../providers/transaction_provider.dart';
 import '../widgets/loading_overlay.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -34,7 +31,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (_formKey.currentState!.validate()) {
       final authProvider = context.read<AuthProvider>();
       
-      final success = await authProvider.signUpWithEmail(
+      final result = await authProvider.signUpWithEmail(
         _emailController.text.trim(),
         _passwordController.text,
         _fullNameController.text.trim(),
@@ -42,7 +39,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       if (!mounted) return;
 
-      if (success) {
+      if (result == SignUpResult.signedIn) {
         // Kayıt başarılı, AppRouter otomatik yönlendirecek
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -50,6 +47,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
             backgroundColor: Colors.green,
           ),
         );
+      } else if (result == SignUpResult.confirmationRequired) {
+        // Oturum açılamadı: kullanıcı e-postasını doğrulayıp giriş yapmalı
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Hesabınız oluşturuldu. E-posta adresinize gelen bağlantıyla '
+              'hesabınızı doğruladıktan sonra giriş yapabilirsiniz.',
+            ),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 6),
+          ),
+        );
+        context.pop(); // Giriş ekranına dön
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

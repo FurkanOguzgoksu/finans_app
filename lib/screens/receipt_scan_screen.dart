@@ -13,6 +13,7 @@ import 'package:finans_app/services/ai_parser_service.dart';
 import 'package:finans_app/models/transaction.dart' as models;
 import 'package:finans_app/models/category.dart' as model_cat;
 import 'package:finans_app/utils/currency_formatter.dart';
+import 'package:finans_app/utils/date_helper.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
@@ -20,7 +21,10 @@ import 'package:path/path.dart' as p;
 ///
 /// Akış: Kamera/Galeri → Önizleme → (İsteğe bağlı) Kırpma → OCR Tarama → Sonuç
 class ReceiptScanScreen extends StatefulWidget {
-  const ReceiptScanScreen({super.key});
+  /// PDF akışında sonuç ekrana gelmeden önce hazırlanır; o durumda sıfırlanmaz
+  final bool keepResult;
+
+  const ReceiptScanScreen({super.key, this.keepResult = false});
 
   @override
   State<ReceiptScanScreen> createState() => _ReceiptScanScreenState();
@@ -30,14 +34,12 @@ class _ReceiptScanScreenState extends State<ReceiptScanScreen> {
   @override
   void initState() {
     super.initState();
-    // Ekran açıldığında önceki kamerada kalan veya taranan veriyi sıfırla
-    // Ancak PDF'den gelen veriler varsa (state == done) sıfırlama!
+    // Ekran açıldığında önceki taramadan kalan veriyi sıfırla.
+    // Yalnızca PDF akışından yeni gelindiyse (keepResult) sonucu koru;
+    // aksi halde kaydedilmeden bırakılan eski sonuç tekrar gösterilirdi.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        final provider = context.read<OcrProvider>();
-        if (provider.state != OcrState.done) {
-          provider.reset();
-        }
+      if (mounted && !widget.keepResult) {
+        context.read<OcrProvider>().reset();
       }
     });
   }
@@ -536,6 +538,7 @@ class _ResultViewState extends State<_ResultView> {
 
   bool _showRawText = false;
   bool _isParsingWithAI = false;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -595,6 +598,7 @@ class _ResultViewState extends State<_ResultView> {
 
     try {
       final parsed = await AiParserService.parse(widget.rawText);
+      if (!mounted) return;
 
       setState(() {
         if (parsed.merchantName != null && parsed.merchantName!.isNotEmpty) {
@@ -722,11 +726,17 @@ class _ResultViewState extends State<_ResultView> {
   }
 
   Future<void> _pickDate() async {
+    // Fişten okunan tarih aralık dışındaysa seçici hata vermesin
+    final bounds = DateHelper.pickerBounds(
+      _selectedDate,
+      first: DateTime(2020),
+      last: DateTime.now().add(const Duration(days: 1)),
+    );
     final pickedDate = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now().add(const Duration(days: 1)),
+      firstDate: bounds.first,
+      lastDate: bounds.last,
     );
     if (pickedDate != null && mounted) {
       final pickedTime = await showTimePicker(
@@ -764,6 +774,8 @@ class _ResultViewState extends State<_ResultView> {
     final title = _titleController.text.trim().isEmpty
         ? 'Fiş Harcaması'
         : _titleController.text.trim();
+
+    setState(() => _isSaving = true);
 
     List<models.TransactionItem>? finalItems;
     if (_itemRows.isNotEmpty) {
@@ -820,17 +832,30 @@ class _ResultViewState extends State<_ResultView> {
 
     if (!mounted) return;
 
-    Provider.of<TransactionProvider>(context, listen: false).addTransaction(tx);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await Provider.of<TransactionProvider>(context, listen: false).addTransaction(tx);
+    } catch (e) {
+      debugPrint('Fiş kaydedilemedi: $e');
+      if (mounted) setState(() => _isSaving = false);
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Kayıt yapılamadı. İnternet bağlantınızı kontrol edin.'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
 
     widget.onReset();
 
-    ScaffoldMessenger.of(context).showSnackBar(
+    messenger.showSnackBar(
       SnackBar(
         content: Text(widget.isPdf ? 'PDF fatura başarıyla kaydedildi ✓' : 'Fiş başarıyla kaydedildi ✓'),
         backgroundColor: Colors.green,
       ),
     );
-    context.pop();
+    if (mounted) context.pop();
   }
 
   @override
@@ -986,7 +1011,7 @@ class _ResultViewState extends State<_ResultView> {
               if (!isEmpty && !_showRawText)
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: _saveTransaction,
+                    onPressed: _isSaving ? null : _saveTransaction,
                     icon: const Icon(Icons.save_rounded),
                     label: const Text('Kaydet'),
                     style: ElevatedButton.styleFrom(

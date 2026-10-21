@@ -18,31 +18,24 @@ class BackupSettingsScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Text(
-                  'Yedekleme Yöntemi',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                // Bilgilendirme: veriler zaten bulutta, dosya yedeği isteğe bağlı
+                const ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(Icons.cloud_done_outlined),
+                  title: Text('Verileriniz bulutta'),
+                  subtitle: Text(
+                    'Kategori ve işlemleriniz hesabınızda saklanır; '
+                    'giriş yaptığınız her cihazda otomatik olarak görünür.',
+                  ),
                 ),
-                const SizedBox(height: 16),
-
-                // Yöntem Seçimi
-                RadioGroup<BackupType>(
-                  groupValue: provider.selectedBackupType,
-                  onChanged: (value) {
-                    if (value != null) provider.setBackupType(value);
-                  },
-                  child: Column(
-                    children: [
-                      RadioListTile<BackupType>(
-                        title: const Text('Cihaza Kaydet (JSON)'),
-                        subtitle: const Text('Verileri telefon hafızasına kaydeder.'),
-                        value: BackupType.json,
-                      ),
-                      RadioListTile<BackupType>(
-                        title: const Text('Buluta Kaydet (Supabase)'),
-                        subtitle: const Text('Verileri Supabase bulut hesabınıza eşitler.'),
-                        value: BackupType.supabase,
-                      ),
-                    ],
+                const SizedBox(height: 8),
+                const ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(Icons.description_outlined),
+                  title: Text('Yedek Dosyası (JSON)'),
+                  subtitle: Text(
+                    "Hesaptan bağımsız bir kopya oluşturur; dosyayı Drive'a, "
+                    'e-postaya veya cihaza kaydedebilir, istediğiniz zaman geri yükleyebilirsiniz.',
                   ),
                 ),
 
@@ -53,7 +46,7 @@ class BackupSettingsScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: provider.lastMessage!.contains('başarı')
+                      color: provider.lastSucceeded
                           ? Colors.green.withValues(alpha: 50/255)
                           : Colors.red.withValues(alpha: 50/255),
                       borderRadius: BorderRadius.circular(8),
@@ -62,7 +55,7 @@ class BackupSettingsScreen extends StatelessWidget {
                       provider.lastMessage!,
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: provider.lastMessage!.contains('başarı')
+                        color: provider.lastSucceeded
                             ? Colors.green.shade800
                             : Colors.red.shade800,
                       ),
@@ -79,25 +72,24 @@ class BackupSettingsScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       ElevatedButton.icon(
-                        icon: const Icon(Icons.cloud_upload),
-                        label: const Text('Şimdi Yedekle'),
+                        icon: const Icon(Icons.file_upload_outlined),
+                        label: const Text('Yedek Dosyası Oluştur'),
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
-                        // ui preview için geçici false kontrolü bypass edildi
                         onPressed: () => provider.performBackup(),
                       ),
                       const SizedBox(height: 16),
                       OutlinedButton.icon(
-                        icon: const Icon(Icons.cloud_download),
-                        label: const Text('Yedekten Yükle'),
+                        icon: const Icon(Icons.file_download_outlined),
+                        label: const Text('Yedek Dosyasından Yükle'),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
                         onPressed: () async {
-                          await provider.performRestore();
+                          final restored = await provider.performRestore();
                           // Geri yükleme sonrası UI'ı güncellemek için verileri yeniden çek
-                          if (context.mounted) {
+                          if (restored && context.mounted) {
                             Provider.of<CategoryProvider>(context, listen: false).loadCategories();
                             Provider.of<TransactionProvider>(context, listen: false).loadTransactions();
                           }

@@ -5,6 +5,8 @@ import '../providers/transaction_provider.dart';
 import '../providers/category_provider.dart';
 import '../widgets/transaction_list_item.dart';
 import '../widgets/transaction_detail_dialog.dart';
+import '../widgets/transaction_actions.dart';
+import '../utils/text_helper.dart';
 import '../models/transaction.dart' as models;
 
 class TransactionsScreen extends StatefulWidget {
@@ -278,9 +280,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       if (_maxAmount != null && tx.amount > _maxAmount!) return false;
       // Arama filtresi
       if (_searchQuery.isNotEmpty) {
-        final q = _searchQuery.toLowerCase();
-        final matchTitle = tx.title.toLowerCase().contains(q);
-        final matchDesc = tx.description?.toLowerCase().contains(q) ?? false;
+        final q = TextHelper.trLower(_searchQuery);
+        final matchTitle = TextHelper.trLower(tx.title).contains(q);
+        final matchDesc = tx.description != null &&
+            TextHelper.trLower(tx.description!).contains(q);
         if (!matchTitle && !matchDesc) return false;
       }
       return true;
@@ -615,36 +618,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                               builder: (ctx) => TransactionDetailDialog(transaction: tx),
                             );
                           },
-                          onEdit: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Düzenleme özelliği yakında eklenecek!')),
-                            );
-                          },
-                          onDelete: () {
-                            if (tx.id != null) {
-                              showDialog(
-                                context: context,
-                                builder: (ctx) => AlertDialog(
-                                  title: const Text('İşlemi Sil'),
-                                  content: const Text('Bu işlemi silmek istediğinize emin misiniz?'),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Navigator.of(ctx).pop(),
-                                      child: const Text('İptal'),
-                                    ),
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        txProvider.deleteTransaction(tx.id!);
-                                        Navigator.of(ctx).pop();
-                                      },
-                                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                                      child: const Text('Sil', style: TextStyle(color: Colors.white)),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }
-                          },
+                          onEdit: () => TransactionActions.showEditSheet(context, tx),
+                          onDelete: () => TransactionActions.confirmDelete(context, tx),
                         );
                       },
                     ),

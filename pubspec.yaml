@@ -34,8 +34,7 @@ dependencies:
   # UI & Icons
   cupertino_icons: ^1.0.8
 
-  # Veritabanı
-  sqflite: ^2.4.1
+  # Dosya yolları
   path: ^1.9.1
   path_provider: ^2.1.5
 
@@ -70,7 +69,6 @@ dependencies:
   http: ^1.3.0
   url_launcher: ^6.3.1
   supabase_flutter: ^2.8.4
-  sqflite_common_ffi: ^2.3.6
   csv: ^8.0.0
   share_plus: ^12.0.2
   flutter_local_notifications: ^21.0.0
@@ -101,8 +99,10 @@ flutter:
   uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:
+  # assets/env/.env gizli tutulur (.gitignore); klasör .env.example ile her
+  # klonda bulunduğu için .env dosyası olmasa da proje derlenir.
   assets:
-    - assets/.env
+    - assets/env/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

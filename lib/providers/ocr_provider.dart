@@ -58,6 +58,7 @@ class OcrProvider extends ChangeNotifier {
       );
       if (photo != null) {
         _imagePath = photo.path;
+        _pdfPath = null;
         _rawText = null;
         _errorMessage = null;
         _setState(OcrState.idle);
@@ -74,10 +75,9 @@ class OcrProvider extends ChangeNotifier {
   Future<void> pickFromGallery() async {
     _setState(OcrState.picking);
     try {
-      if (!await _checkGalleryPermission()) {
-        _setState(OcrState.idle);
-        return;
-      }
+      // Galeri için izin gerekmez: image_picker Android'de sistem fotoğraf
+      // seçicisini kullanır. Permission.photos ise Android 12 ve altında her
+      // zaman "reddedildi" döndüğü için galeriyi tamamen kilitliyordu.
       final XFile? image = await _picker.pickImage(
         source: ImageSource.gallery,
         imageQuality: 90,
@@ -86,6 +86,7 @@ class OcrProvider extends ChangeNotifier {
       );
       if (image != null) {
         _imagePath = image.path;
+        _pdfPath = null;
         _rawText = null;
         _errorMessage = null;
         _setState(OcrState.idle);
@@ -121,8 +122,12 @@ class OcrProvider extends ChangeNotifier {
       final file = File(filePath);
       final bytes = await file.readAsBytes();
       final PdfDocument document = PdfDocument(inputBytes: bytes);
-      final String extractedText = PdfTextExtractor(document).extractText();
-      document.dispose();
+      final String extractedText;
+      try {
+        extractedText = PdfTextExtractor(document).extractText();
+      } finally {
+        document.dispose();
+      }
 
       if (extractedText.trim().isEmpty) {
         _rawText = '';
@@ -250,34 +255,6 @@ class OcrProvider extends ChangeNotifier {
         _setError('Kamera izni verilmedi.');
         return false;
       }
-    }
-    return true;
-  }
-
-  /// Galeri/Depolama izni kontrolü
-  Future<bool> _checkGalleryPermission() async {
-    PermissionStatus status;
-    if (Platform.isAndroid) {
-      status = await Permission.photos.status;
-      if (!status.isGranted && !status.isLimited) {
-        status = await Permission.photos.request();
-      }
-    } else {
-      status = await Permission.photos.status;
-      if (!status.isGranted && !status.isLimited) {
-        status = await Permission.photos.request();
-      }
-    }
-
-    if (status.isPermanentlyDenied) {
-      _setError('Galeri izni kalıcı olarak reddedildi. Lütfen ayarlardan izin verin.');
-      openAppSettings();
-      return false;
-    }
-
-    if (!status.isGranted && !status.isLimited) {
-      _setError('Galeri erişim izni verilmedi.');
-      return false;
     }
     return true;
   }

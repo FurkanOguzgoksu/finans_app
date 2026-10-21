@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:finans_app/models/category.dart';
 import 'package:finans_app/providers/category_provider.dart';
+import 'package:finans_app/providers/transaction_provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
 
 /// Kategori Yönetimi Ekranı
 /// Kullanıcı gelir/gider kategorilerini ekleyebilir, düzenleyebilir ve silebilir.
@@ -389,10 +391,12 @@ class CategoryManagementScreen extends StatelessWidget {
                     color: colorHex,
                   );
 
-                  context.read<CategoryProvider>().addCategory(category);
-                  Navigator.of(ctx).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('"$name" kategorisi eklendi')),
+                  _runCategoryChange(
+                    context,
+                    dialogContext: ctx,
+                    action: () => context.read<CategoryProvider>().addCategory(category),
+                    successMessage: '"$name" kategorisi eklendi',
+                    errorMessage: 'Kategori eklenemedi.',
                   );
                 },
                 child: const Text('Ekle'),
@@ -572,10 +576,12 @@ class CategoryManagementScreen extends StatelessWidget {
                     color: colorHex,
                   );
 
-                  context.read<CategoryProvider>().updateCategory(updated);
-                  Navigator.of(ctx).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('"$name" kategorisi güncellendi')),
+                  _runCategoryChange(
+                    context,
+                    dialogContext: ctx,
+                    action: () => context.read<CategoryProvider>().updateCategory(updated),
+                    successMessage: '"$name" kategorisi güncellendi',
+                    errorMessage: 'Kategori güncellenemedi.',
                   );
                 },
                 child: const Text('Kaydet'),
@@ -588,13 +594,39 @@ class CategoryManagementScreen extends StatelessWidget {
   }
 
   void _showDeleteConfirmation(BuildContext context, Category category) {
+    // İşlemi olan kategori veritabanında silinemez (işlemler sessizce
+    // silinmesin diye); kullanıcıya önceden kaç işlem olduğu söylenir.
+    final usageCount = context
+        .read<TransactionProvider>()
+        .transactions
+        .where((tx) => tx.categoryId == category.id)
+        .length;
+    if (usageCount > 0) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Kategori Silinemez'),
+          content: Text(
+            '"${category.name}" kategorisinde $usageCount işlem var.\n\n'
+            'Kategoriyi silmeden önce bu işlemleri başka bir kategoriye taşıyın veya silin.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Tamam'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Kategoriyi Sil'),
         content: Text(
-          '"${category.name}" kategorisini silmek istediğinize emin misiniz?\n\n'
-          'Bu kategoriye ait işlemler de etkilenebilir.',
+          '"${category.name}" kategorisini silmek istediğinize emin misiniz?',
         ),
         actions: [
           TextButton(
@@ -605,18 +637,49 @@ class CategoryManagementScreen extends StatelessWidget {
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () {
               if (category.id != null) {
-                context.read<CategoryProvider>().deleteCategory(category.id!);
-                Navigator.of(ctx).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('"${category.name}" kategorisi silindi'),
-                  ),
+                _runCategoryChange(
+                  context,
+                  dialogContext: ctx,
+                  action: () =>
+                      context.read<CategoryProvider>().deleteCategory(category.id!),
+                  successMessage: '"${category.name}" kategorisi silindi',
+                  errorMessage: 'Kategori silinemedi.',
                 );
               }
             },
             child: const Text('Sil', style: TextStyle(color: Colors.white)),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Kategori ekleme/güncelleme/silme işlemini çalıştırır: diyaloğu kapatır,
+/// işlemin bitmesini bekler ve sonucu kullanıcıya bildirir.
+Future<void> _runCategoryChange(
+  BuildContext context, {
+  required BuildContext dialogContext,
+  required Future<void> Function() action,
+  required String successMessage,
+  required String errorMessage,
+}) async {
+  final messenger = ScaffoldMessenger.of(context);
+  final future = action();
+  Navigator.of(dialogContext).pop();
+  try {
+    await future;
+    messenger.showSnackBar(SnackBar(content: Text(successMessage)));
+  } catch (e) {
+    debugPrint('Kategori işlemi başarısız: $e');
+    // 23503: kategoriye bağlı işlem var (liste güncel değilken silinmeye çalışıldı)
+    final reason = e is PostgrestException && e.code == '23503'
+        ? 'Bu kategoriye ait işlemler var.'
+        : 'İnternet bağlantınızı kontrol edin.';
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text('$errorMessage $reason'),
+        backgroundColor: Colors.redAccent,
       ),
     );
   }

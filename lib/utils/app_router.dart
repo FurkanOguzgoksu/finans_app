@@ -12,8 +12,6 @@ import 'package:finans_app/screens/profile_screen.dart';
 import 'package:finans_app/screens/login_screen.dart';
 import 'package:finans_app/screens/register_screen.dart';
 import 'package:finans_app/providers/auth_provider.dart';
-import 'package:finans_app/providers/category_provider.dart';
-import 'package:finans_app/providers/transaction_provider.dart';
 import 'package:finans_app/widgets/loading_overlay.dart';
 import 'package:provider/provider.dart';
 
@@ -35,9 +33,7 @@ class AppRouter {
           return '/login';
         }
         if (isLoggedIn && isLoggingIn) {
-          // Kullanıcı yeni giriş yaptı! Verileri çekelim.
-          context.read<CategoryProvider>().loadCategories();
-          context.read<TransactionProvider>().loadTransactions();
+          // Veriler, AuthProvider'ı dinleyen provider'lar tarafından yüklenir
           return '/';
         }
         return null;
@@ -111,10 +107,12 @@ class AppRouter {
           ],
         ),
         // Fiş Tarama Ekranı (tam ekran)
+        // extra == true: PDF önceden işlendi, sonucu göster (sıfırlama)
         GoRoute(
           path: '/scan',
           name: 'scan',
-          builder: (context, state) => const ReceiptScanScreen(),
+          builder: (context, state) =>
+              ReceiptScanScreen(keepResult: state.extra == true),
         ),
         // Yedekleme Ayarları (tam ekran)
         GoRoute(

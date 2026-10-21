@@ -1,16 +1,33 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/supabase_service.dart';
 
 enum AuthLoadingState { none, signingIn, signingUp, signingOut }
 
-class AuthProvider extends ChangeNotifier {
-  final SupabaseClient _supabase = SupabaseService.client;
+/// Kayıt işleminin sonucu
+enum SignUpResult {
+  signedIn, // Kayıt sonrası oturum açıldı
+  confirmationRequired, // Hesap oluştu, e-posta doğrulaması bekleniyor
+  failed,
+}
+
+/// Oturumdaki kullanıcının kimliğini dinlenebilir şekilde sunar.
+/// Kullanıcıya özel veri tutan provider'lar hesap değişimini bununla takip eder.
+abstract class UserSession implements Listenable {
+  String? get userId;
+}
+
+class AuthProvider extends ChangeNotifier implements UserSession {
+  final GoTrueClient _auth;
+  StreamSubscription<AuthState>? _authSubscription;
   User? _user;
   AuthLoadingState _loadingState = AuthLoadingState.none;
   String? _errorMessage;
 
   User? get user => _user;
+  @override
+  String? get userId => _user?.id;
   AuthLoadingState get loadingState => _loadingState;
   bool get isLoading => _loadingState != AuthLoadingState.none;
   String? get errorMessage => _errorMessage;
@@ -45,26 +62,33 @@ class AuthProvider extends ChangeNotifier {
     return 'E-posta';
   }
 
-  AuthProvider() {
+  /// [auth] testlerde sahte istemci vermek içindir; verilmezse Supabase kullanılır.
+  AuthProvider({GoTrueClient? auth}) : _auth = auth ?? SupabaseService.client.auth {
     _initializeAuth();
   }
 
   void _initializeAuth() {
-    _user = _supabase.auth.currentUser;
-    
-    _supabase.auth.onAuthStateChange.listen((data) {
+    _user = _auth.currentUser;
+
+    _authSubscription = _auth.onAuthStateChange.listen((data) {
       _user = data.session?.user;
       notifyListeners();
     });
   }
 
+  @override
+  void dispose() {
+    _authSubscription?.cancel();
+    super.dispose();
+  }
+
   // E-posta ile Kayıt
-  Future<bool> signUpWithEmail(String email, String password, String fullName) async {
+  Future<SignUpResult> signUpWithEmail(String email, String password, String fullName) async {
     try {
       _setLoading(AuthLoadingState.signingUp);
       // Animasyonun görünmesi için minimum bekleme süresi
       final results = await Future.wait([
-        _supabase.auth.signUp(
+        _auth.signUp(
           email: email,
           password: password,
           data: {'full_name': fullName},
@@ -76,26 +100,28 @@ class AuthProvider extends ChangeNotifier {
 
       // Eğer kayıt sonrası oturum açılmadıysa (e-posta doğrulama açık olabilir),
       // hemen giriş yapmayı dene
+      var result = SignUpResult.signedIn;
       if (response.session == null) {
         try {
-          await _supabase.auth.signInWithPassword(
+          await _auth.signInWithPassword(
             email: email,
             password: password,
           );
         } catch (_) {
-          // Giriş de başarısız olursa (e-posta doğrulama zorunluysa)
-          // yine de kayıt başarılı sayılır, kullanıcı bilgilendirilir
+          // Giriş de başarısız olursa e-posta doğrulaması zorunludur;
+          // kayıt başarılıdır ama kullanıcı önce e-postasını doğrulamalı
+          result = SignUpResult.confirmationRequired;
         }
       }
 
       _setLoading(AuthLoadingState.none);
-      return true;
+      return result;
     } on AuthException catch (error) {
       _setError(error.message);
-      return false;
+      return SignUpResult.failed;
     } catch (error) {
       _setError('Kayıt olurken beklenmeyen bir hata oluştu: $error');
-      return false;
+      return SignUpResult.failed;
     }
   }
 
@@ -105,7 +131,7 @@ class AuthProvider extends ChangeNotifier {
       _setLoading(AuthLoadingState.signingIn);
       // Animasyonun görünmesi için minimum bekleme süresi
       await Future.wait([
-        _supabase.auth.signInWithPassword(
+        _auth.signInWithPassword(
           email: email,
           password: password,
         ),
@@ -152,7 +178,7 @@ class AuthProvider extends ChangeNotifier {
       // Supabase'in yerleşik OAuth provider'ını kullanarak Google girişi
       // Bu işlem cihazın varsayılan tarayıcısını açar ve girişten sonra uygulamaya geri döner.
       
-      final success = await _supabase.auth.signInWithOAuth(
+      final success = await _auth.signInWithOAuth(
         OAuthProvider.google,
         redirectTo: 'finansapp://login-callback', // Bu URL Android Manifest ve Supabase Dashboard'da tanımlı olmalı
       );
@@ -182,7 +208,7 @@ class AuthProvider extends ChangeNotifier {
       // Çünkü signOut çağrıldığı an router otomatik login sayfasına atıyor.
       await Future.delayed(const Duration(milliseconds: 1500));
       
-      await _supabase.auth.signOut();
+      await _auth.signOut();
       _setLoading(AuthLoadingState.none);
     } catch (error) {
       _setError('Çıkış yaparken bir hata oluştu: $error');

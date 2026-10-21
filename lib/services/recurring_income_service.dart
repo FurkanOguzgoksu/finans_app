@@ -11,22 +11,25 @@ import '../models/transaction.dart' as models;
 /// 3. Bu ay daha önce eklendi mi? (lastIncomeMonth)
 /// 4. Hepsi tamam → gelir işlemi ekle ve lastIncomeMonth güncelle
 class RecurringIncomeService {
-  /// Otomatik gelir kontrolünü çalıştırır.
-  /// [quiet] true ise bildirim göstermez (sessiz mod).
+  /// Tarihin ay anahtarını döndürür: 'YYYY-MM' (metin olarak sıralanabilir)
+  static String monthKey(DateTime date) =>
+      '${date.year}-${date.month.toString().padLeft(2, '0')}';
+
+  /// Otomatik gelir kontrolünü çalıştırır, gelir eklendiyse true döner.
+  /// [now] testlerde tarihi sabitlemek içindir.
   static Future<bool> checkAndAdd({
     required SettingsProvider settings,
     required TransactionProvider txProvider,
-    BuildContext? context,
+    DateTime? now,
   }) async {
     // Ayarlar yüklü değilse çık
     if (!settings.hasRecurringIncome) return false;
 
-    final now = DateTime.now();
-    final currentMonthKey =
-        '${now.year}-${now.month.toString().padLeft(2, '0')}';
+    now ??= DateTime.now();
+    final currentMonthKey = monthKey(now);
 
-    // Bu ay zaten eklendi mi?
-    if (settings.lastIncomeMonth == currentMonthKey) return false;
+    // Bu ayın (veya ileri bir ayın) geliri zaten eklendi mi?
+    if (settings.lastIncomeMonth.compareTo(currentMonthKey) >= 0) return false;
 
     // Ay sonu düzeltme: örn. Mart'ta gün=31 ise son gün olan 31'i kullan
     final lastDayOfMonth = DateTime(now.year, now.month + 1, 0).day;
