@@ -847,6 +847,8 @@ class _MonthlyIncomeDialogState extends State<_MonthlyIncomeDialog> {
       );
     }
     _titleController.text = 'Aylık Maaş';
+    // Bu ayın geliri zaten eklendiyse varsayılan olarak tekrar eklenmesin
+    _addAsTransaction = !_isMonthAlreadyAdded(_selectedDate);
 
     // Kategorileri yükle
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -857,6 +859,13 @@ class _MonthlyIncomeDialogState extends State<_MonthlyIncomeDialog> {
         _preselectIncomeCategory();
       }
     });
+  }
+
+  /// Seçilen ayın geliri (otomatik veya elle) zaten eklenmiş mi?
+  bool _isMonthAlreadyAdded(DateTime date) {
+    final lastMonth = widget.settings.lastIncomeMonth;
+    return lastMonth.isNotEmpty &&
+        RecurringIncomeService.monthKey(date).compareTo(lastMonth) <= 0;
   }
 
   void _preselectIncomeCategory() {
@@ -912,6 +921,7 @@ class _MonthlyIncomeDialogState extends State<_MonthlyIncomeDialog> {
         pickedTime?.hour ?? _selectedDate.hour,
         pickedTime?.minute ?? _selectedDate.minute,
       );
+      _addAsTransaction = !_isMonthAlreadyAdded(_selectedDate);
     });
   }
 
@@ -1184,7 +1194,9 @@ class _MonthlyIncomeDialogState extends State<_MonthlyIncomeDialog> {
               subtitle: Text(
                 _addAsTransaction
                     ? 'Gelir listesine de kaydedilecek'
-                    : 'Sadece aylık gelir ayarı güncellenir',
+                    : _isMonthAlreadyAdded(_selectedDate)
+                        ? 'Bu ayın geliri zaten eklendi; yalnızca ayar güncellenir'
+                        : 'Sadece aylık gelir ayarı güncellenir',
                 style: TextStyle(
                   fontSize: 12,
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.5),

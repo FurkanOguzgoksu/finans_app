@@ -17,108 +17,112 @@ class TransactionOptionsSheet extends StatelessWidget {
         color: theme.colorScheme.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Center(
-            child: Container(
-              height: 4,
-              width: 40,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade400,
-                borderRadius: BorderRadius.circular(4),
+      // ListTile'ların dokunma efekti renkli kutunun altında kalmasın
+      child: Material(
+        type: MaterialType.transparency,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Center(
+              child: Container(
+                height: 4,
+                width: 40,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade400,
+                  borderRadius: BorderRadius.circular(4),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'İşlem Yöntemi Seçin',
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
+            const SizedBox(height: 24),
+            Text(
+              'İşlem Yöntemi Seçin',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-          const SizedBox(height: 24),
+            const SizedBox(height: 24),
 
-          // 1. Manuel Giriş
-          ListTile(
-            leading: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
+            // 1. Manuel Giriş
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.edit_note, color: theme.colorScheme.primary),
               ),
-              child: Icon(Icons.edit_note, color: theme.colorScheme.primary),
+              title: const Text(
+                'Manuel Giriş',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              subtitle: const Text('Gelir veya gideri elle ekleyin'),
+              onTap: () {
+                Navigator.pop(context);
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (ctx) => const AddTransactionSheet(),
+                );
+              },
             ),
-            title: const Text(
-              'Manuel Giriş',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            subtitle: const Text('Gelir veya gideri elle ekleyin'),
-            onTap: () {
-              Navigator.pop(context);
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder: (ctx) => const AddTransactionSheet(),
-              );
-            },
-          ),
-          const Divider(),
+            const Divider(),
 
-          // 2. Kamera ile Tarama
-          ListTile(
-            leading: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.orange.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
+            // 2. Kamera ile Tarama
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.document_scanner, color: Colors.orange),
               ),
-              child: const Icon(Icons.document_scanner, color: Colors.orange),
+              title: const Text(
+                'Kamera ile Fiş Tara',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              subtitle: const Text('OCR ile fatura bilgilerini otomatik alın'),
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/scan');
+              },
             ),
-            title: const Text(
-              'Kamera ile Fiş Tara',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            subtitle: const Text('OCR ile fatura bilgilerini otomatik alın'),
-            onTap: () {
-              Navigator.pop(context);
-              context.push('/scan'); 
-            },
-          ),
-          const Divider(),
+            const Divider(),
 
-          // 3. PDF Yükleme
-          ListTile(
-            leading: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.purple.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
+            // 3. PDF Yükleme
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.purple.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.picture_as_pdf, color: Colors.purple),
               ),
-              child: const Icon(Icons.picture_as_pdf, color: Colors.purple),
+              title: const Text(
+                'PDF Yükle',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              subtitle: const Text('Dijital faturanızı sisteme aktarın'),
+              onTap: () async {
+                final ocrProvider = context.read<OcrProvider>();
+                final navigator = Navigator.of(context);
+                final router = GoRouter.of(context);
+                navigator.pop();
+                ocrProvider.reset();
+                await ocrProvider.pickFromPdf();
+                // Boş metin veya hata da gösterilir; kullanıcı iptal ettiyse (idle) açılmaz
+                if (ocrProvider.state == OcrState.done ||
+                    ocrProvider.state == OcrState.error) {
+                  router.push('/scan', extra: true);
+                }
+              },
             ),
-            title: const Text(
-              'PDF Yükle',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            subtitle: const Text('Dijital faturanızı sisteme aktarın'),
-            onTap: () async {
-              final ocrProvider = context.read<OcrProvider>();
-              final navigator = Navigator.of(context);
-              final router = GoRouter.of(context);
-              navigator.pop();
-              ocrProvider.reset();
-              await ocrProvider.pickFromPdf();
-              // Boş metin veya hata da gösterilir; kullanıcı iptal ettiyse (idle) açılmaz
-              if (ocrProvider.state == OcrState.done ||
-                  ocrProvider.state == OcrState.error) {
-                router.push('/scan', extra: true);
-              }
-            },
-          ),
-          const SizedBox(height: 16),
-        ],
+            const SizedBox(height: 16),
+          ],
+        ),
       ),
     );
   }

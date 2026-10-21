@@ -94,6 +94,8 @@ class _HomeScreenState extends State<HomeScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton.extended(
+        // Sekmeler aynı anda ağaçta durduğu için her FAB'ın hero etiketi ayrı olmalı
+        heroTag: 'home_fab',
         onPressed: () {
           showModalBottomSheet(
             context: context,

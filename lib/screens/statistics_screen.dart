@@ -420,6 +420,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         centerTitle: true,
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'statistics_fab',
         onPressed: () {
           showModalBottomSheet(
             context: context,
