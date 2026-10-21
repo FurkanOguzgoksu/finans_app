@@ -1,5 +1,6 @@
 import '../models/parsed_receipt.dart';
 import '../models/transaction.dart';
+import '../utils/date_helper.dart';
 
 class InvoiceParser {
   static ParsedReceipt parse(String rawText) {
@@ -549,14 +550,11 @@ class InvoiceParser {
       if (dateMatch != null && date == null) {
         final day = int.tryParse(dateMatch.group(1)!);
         final month = int.tryParse(dateMatch.group(2)!);
-        int? year = int.tryParse(dateMatch.group(3)!);
+        final year = int.tryParse(dateMatch.group(3)!);
 
         if (day != null && month != null && year != null) {
-          if (year < 100) year += 2000;
-
-          if (day >= 1 && day <= 31 && month >= 1 && month <= 12) {
-            date = DateTime(year, month, day);
-          }
+          // 31.02 gibi geçersiz veya yılı hatalı okunmuş tarihler atlanır
+          date = DateHelper.validDate(year, month, day);
         }
       }
 

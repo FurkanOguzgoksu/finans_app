@@ -110,8 +110,10 @@ class TransactionOptionsSheet extends StatelessWidget {
               navigator.pop();
               ocrProvider.reset();
               await ocrProvider.pickFromPdf();
-              if (ocrProvider.hasResult) {
-                router.push('/scan');
+              // Boş metin veya hata da gösterilir; kullanıcı iptal ettiyse (idle) açılmaz
+              if (ocrProvider.state == OcrState.done ||
+                  ocrProvider.state == OcrState.error) {
+                router.push('/scan', extra: true);
               }
             },
           ),

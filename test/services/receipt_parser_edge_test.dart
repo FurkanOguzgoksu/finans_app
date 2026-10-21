@@ -72,5 +72,20 @@ TOPLAM        100,00
       expect(parsed.merchantName, isNotNull);
       expect(parsed.amount, greaterThan(0));
     });
+
+    test('Takvimde olmayan tarih sonraki aya kaymaz, bugünün tarihi kullanılır', () {
+      const rawText = '''
+MARKET A.S.
+31.02.2026 14:30
+EKMEK          10,00
+TOPLAM         10,00
+''';
+      final parsed = ReceiptParser.parse(rawText);
+      final today = DateTime.now();
+      // Eskiden DateTime(2026, 2, 31) → 3 Mart 2026 olarak kaydediliyordu
+      expect(parsed.date!.year, today.year);
+      expect(parsed.date!.month, today.month);
+      expect(parsed.date!.day, today.day);
+    });
   });
 }

@@ -35,7 +35,8 @@ Fiziksel fişlerin dijitale dönüştürülme süreci 4 aşamadan oluşur:
    ```bash
    flutter pub get
    ```
-4. Uygulamayı çalıştırın:
+4. (İsteğe bağlı) Yapay zeka özellikleri için `assets/env/.env.example` dosyasını `assets/env/.env` olarak kopyalayıp `GEMINI_API_KEY` değerini girin. Dosya olmadan da proje derlenir; yalnızca AI özellikleri uyarı verir.
+5. Uygulamayı çalıştırın:
    ```bash
    flutter run
    ```

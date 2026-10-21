@@ -11,9 +11,8 @@ import 'package:finans_app/widgets/budget_progress_card.dart';
 import 'package:finans_app/widgets/transaction_list_item.dart';
 import 'package:finans_app/utils/responsive_layout.dart';
 import 'package:finans_app/widgets/transaction_options_sheet.dart';
-
+import 'package:finans_app/widgets/transaction_actions.dart';
 import 'package:finans_app/widgets/transaction_detail_dialog.dart';
-import 'package:finans_app/widgets/add_transaction_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -35,20 +34,22 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   /// Uygulama açıldığında tekrarlayan gelir kontrolü yapar.
-  /// SettingsProvider yüklenmeyi tamamladıktan sonra çalışır.
+  /// SettingsProvider ayarları senkron yüklediği için beklemeye gerek yoktur.
   Future<void> _checkRecurringIncome() async {
     final settings = context.read<SettingsProvider>();
     final txProvider = context.read<TransactionProvider>();
 
-    // SettingsProvider async yüklenmiş olabilir, kısa bekleme
-    await Future.delayed(const Duration(milliseconds: 300));
-    if (!mounted) return;
-
-    final added = await RecurringIncomeService.checkAndAdd(
-      settings: settings,
-      txProvider: txProvider,
-      context: context,
-    );
+    final bool added;
+    try {
+      added = await RecurringIncomeService.checkAndAdd(
+        settings: settings,
+        txProvider: txProvider,
+      );
+    } catch (e) {
+      // Kayıt başarısız olduysa ay işaretlenmez, sonraki açılışta tekrar denenir
+      debugPrint('Otomatik gelir eklenemedi: $e');
+      return;
+    }
 
     if (added && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -73,11 +74,18 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: Consumer2<TransactionProvider, SettingsProvider>(
         builder: (context, provider, settings, child) {
-          if (provider.isLoading) {
+          final transactions = provider.transactions;
+
+          // Tam ekran yükleme göstergesi yalnızca ilk yüklemede; sonraki
+          // yenilemelerde liste yerinde kalır ve kaydırma konumu korunur
+          if (provider.isLoading && transactions.isEmpty) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final transactions = provider.transactions;
+          // Veri yüklenemediyse "Henüz işlem yok" yerine hatayı göster
+          if (provider.loadError != null && transactions.isEmpty) {
+            return _buildLoadError(context, provider);
+          }
 
           return ResponsiveLayout(
             mobileScaffold: _buildMobileLayout(context, provider, settings, transactions),
@@ -121,6 +129,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   totalExpense: provider.totalExpense,
                   balance: provider.balance,
                   monthlyIncome: settings.monthlyIncome,
+                  currentMonthExpense: provider.currentMonthExpense,
                 ),
                 const SizedBox(height: 24),
                 const BudgetProgressCard(), // Bütçe kartı
@@ -164,6 +173,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         totalExpense: provider.totalExpense,
                         balance: provider.balance,
                         monthlyIncome: settings.monthlyIncome,
+                        currentMonthExpense: provider.currentMonthExpense,
                       ),
                       const SizedBox(height: 24),
                       const BudgetProgressCard(),
@@ -196,42 +206,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   builder: (ctx) => TransactionDetailDialog(transaction: tx),
                                 );
                               },
-                              onEdit: () {
-                                showModalBottomSheet(
-                                  context: context,
-                                  isScrollControlled: true,
-                                  useSafeArea: true,
-                                  shape: const RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                                  ),
-                                  builder: (_) => AddTransactionSheet(transaction: tx),
-                                );
-                              },
-                              onDelete: () {
-                                if (tx.id != null) {
-                                  showDialog(
-                                    context: context,
-                                    builder: (ctx) => AlertDialog(
-                                      title: const Text('İşlemi Sil'),
-                                      content: const Text('Bu işlemi silmek istediğinize emin misiniz?'),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () => Navigator.of(ctx).pop(),
-                                          child: const Text('İptal'),
-                                        ),
-                                        ElevatedButton(
-                                          onPressed: () {
-                                            provider.deleteTransaction(tx.id!);
-                                            Navigator.of(ctx).pop();
-                                          },
-                                          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                                          child: const Text('Sil', style: TextStyle(color: Colors.white)),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                }
-                              },
+                              onEdit: () => TransactionActions.showEditSheet(context, tx),
+                              onDelete: () => TransactionActions.confirmDelete(context, tx),
                             );
                           },
                         ),
@@ -247,8 +223,29 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // .... Metotların devamı unchanged kalacak (SliverAppBar pb.). Alt satırda SliverList güncellemesi var. Değişken limitini aşmamak için bunu parçalıyorum.
-
+  /// İşlemler yüklenemediğinde (ör. internet yok) yeniden deneme ekranı
+  Widget _buildLoadError(BuildContext context, TransactionProvider provider) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.cloud_off_rounded, size: 56, color: colorScheme.error),
+            const SizedBox(height: 16),
+            Text(provider.loadError!, textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: provider.loadTransactions,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Tekrar Dene'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   SliverAppBar _buildSliverAppBar(BuildContext context) {
     return SliverAppBar(
@@ -312,42 +309,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 builder: (ctx) => TransactionDetailDialog(transaction: tx),
               );
             },
-            onEdit: () {
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                useSafeArea: true,
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                ),
-                builder: (_) => AddTransactionSheet(transaction: tx),
-              );
-            },
-            onDelete: () {
-               if (tx.id != null) {
-                 showDialog(
-                   context: context,
-                   builder: (ctx) => AlertDialog(
-                     title: const Text('İşlemi Sil'),
-                     content: const Text('Bu işlemi silmek istediğinize emin misiniz?'),
-                     actions: [
-                       TextButton(
-                         onPressed: () => Navigator.of(ctx).pop(),
-                         child: const Text('İptal'),
-                       ),
-                       ElevatedButton(
-                         onPressed: () {
-                           provider.deleteTransaction(tx.id!);
-                           Navigator.of(ctx).pop();
-                         },
-                         style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                         child: const Text('Sil', style: TextStyle(color: Colors.white)),
-                       ),
-                     ],
-                   ),
-                 );
-               }
-            },
+            onEdit: () => TransactionActions.showEditSheet(context, tx),
+            onDelete: () => TransactionActions.confirmDelete(context, tx),
           );
         }, childCount: transactions.length),
       ),

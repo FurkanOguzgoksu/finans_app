@@ -50,7 +50,9 @@ class CurrencyInputFormatter extends TextInputFormatter {
 
     // Format integer part with thousands separator
     if (intPart.isNotEmpty) {
-      final int value = int.parse(intPart);
+      // Very long input overflows int and makes parsing throw; keep the old value
+      final int? value = intPart.length > 15 ? null : int.tryParse(intPart);
+      if (value == null) return oldValue;
       final format = NumberFormat.decimalPattern('tr_TR');
       intPart = format.format(value);
     }

@@ -6,15 +6,14 @@ import 'package:provider/provider.dart';
 import 'package:local_auth/local_auth.dart';
 import '../providers/theme_provider.dart';
 import '../providers/settings_provider.dart';
-import '../providers/theme_provider.dart';
-import '../providers/settings_provider.dart';
 import '../providers/transaction_provider.dart';
 import '../providers/category_provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/export_service.dart';
-import '../widgets/loading_overlay.dart';
+import '../services/recurring_income_service.dart';
 import '../models/transaction.dart' as models;
 import '../utils/currency_formatter.dart';
+import '../utils/date_helper.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -23,7 +22,6 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final authProvider = context.watch<AuthProvider>();
 
     return Scaffold(
       appBar: AppBar(
@@ -305,7 +303,7 @@ class SettingsScreen extends StatelessWidget {
           ],
         ),
         content: const Text(
-          'Hesabınızdan çıkış yapmak istediğinize emin misiniz? Yerel verileriniz telefonunuzda saklanmaya devam edecektir.',
+          'Hesabınızdan çıkış yapmak istediğinize emin misiniz? Verileriniz hesabınızda saklanmaya devam edecek, tekrar giriş yaptığınızda yüklenecektir.',
         ),
         actions: [
           TextButton(
@@ -317,8 +315,6 @@ class SettingsScreen extends StatelessWidget {
               Navigator.of(ctx).pop();
               await authProvider.signOut();
               if (context.mounted) {
-                context.read<CategoryProvider>().clear();
-                context.read<TransactionProvider>().clear();
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Başarıyla çıkış yapıldı.'),
@@ -454,7 +450,7 @@ class SettingsScreen extends StatelessWidget {
                             }
                           : null, // En az 1 saat kalmalı
                     );
-                  }).toList(),
+                  }),
                   if (settings.notificationTimes.length < 3)
                     ActionChip(
                       label: const Text('Saat Ekle'),
@@ -486,8 +482,8 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Widget _buildFinancialCard(BuildContext context, ThemeData theme) {
-    return Consumer2<SettingsProvider, TransactionProvider>(
-      builder: (context, settings, provider, child) {
+    return Consumer<SettingsProvider>(
+      builder: (context, settings, child) {
         final hasIncome = settings.monthlyIncome > 0;
         return _buildSettingsCard(
           title: 'FİNANSAL AYARLAR',
@@ -510,9 +506,9 @@ class SettingsScreen extends StatelessWidget {
             _buildListItem(
               icon: Icons.pie_chart_outline,
               title: 'Bütçe Limiti',
-              subtitle: '₺${CurrencyFormatter.format(provider.budgetLimit)}',
+              subtitle: '₺${CurrencyFormatter.format(settings.budgetLimit)}',
               theme: theme,
-              onTap: () => _showBudgetLimitDialog(context, provider),
+              onTap: () => _showBudgetLimitDialog(context, settings),
               showDivider: false,
             ),
           ],
@@ -779,10 +775,10 @@ class SettingsScreen extends StatelessWidget {
   /// Bütçe Limiti Dialog
   void _showBudgetLimitDialog(
     BuildContext context,
-    TransactionProvider provider,
+    SettingsProvider settings,
   ) {
     final controller = TextEditingController(
-      text: CurrencyFormatter.format(provider.budgetLimit),
+      text: CurrencyFormatter.format(settings.budgetLimit),
     );
     showDialog(
       context: context,
@@ -808,7 +804,7 @@ class SettingsScreen extends StatelessWidget {
             onPressed: () {
               final newLimit = CurrencyFormatter.parse(controller.text);
               if (newLimit != null && newLimit > 0) {
-                provider.setBudgetLimit(newLimit);
+                settings.setBudgetLimit(newLimit);
                 Navigator.of(ctx).pop();
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Bütçe limiti güncellendi')),
@@ -840,6 +836,7 @@ class _MonthlyIncomeDialogState extends State<_MonthlyIncomeDialog> {
   DateTime _selectedDate = DateTime.now();
   int? _selectedCategoryId;
   bool _addAsTransaction = true;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -888,11 +885,16 @@ class _MonthlyIncomeDialogState extends State<_MonthlyIncomeDialog> {
   }
 
   Future<void> _pickDateTime() async {
+    final bounds = DateHelper.pickerBounds(
+      _selectedDate,
+      first: DateTime(2020),
+      last: DateTime.now().add(const Duration(days: 365)),
+    );
     final pickedDate = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      firstDate: bounds.first,
+      lastDate: bounds.last,
     );
     if (pickedDate == null || !mounted) return;
 
@@ -913,7 +915,7 @@ class _MonthlyIncomeDialogState extends State<_MonthlyIncomeDialog> {
     });
   }
 
-  void _save() {
+  Future<void> _save() async {
     final parsed = CurrencyFormatter.parse(_amountController.text);
     if (parsed == null || parsed <= 0) {
       ScaffoldMessenger.of(
@@ -934,7 +936,44 @@ class _MonthlyIncomeDialogState extends State<_MonthlyIncomeDialog> {
         ? 'Aylık Maaş'
         : _titleController.text.trim();
 
-    // 1. Tekrarlayan gelir konfigürasyonunu kaydet (tutar + gün + kategori + başlık)
+    // 1. Seçilen tarih için işlem olarak da ekle (istenirse).
+    // Önce bu yapılır: kayıt başarısız olursa ayarlar değişmeden kalır.
+    if (_addAsTransaction && categoryId != null) {
+      final tx = models.Transaction(
+        title: title,
+        amount: parsed,
+        type: 'gelir',
+        categoryId: categoryId,
+        date: _selectedDate,
+        description: 'Aylık gelir — her ayın ${_selectedDate.day}. günü otomatik eklenir',
+      );
+      setState(() => _isSaving = true);
+      try {
+        await Provider.of<TransactionProvider>(
+          context,
+          listen: false,
+        ).addTransaction(tx);
+      } catch (e) {
+        debugPrint('Aylık gelir işlemi eklenemedi: $e');
+        if (!mounted) return;
+        setState(() => _isSaving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Gelir kaydedilemedi. İnternet bağlantınızı kontrol edin.'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+        return;
+      }
+
+      // Eklenen ayın geliri otomatik olarak tekrar eklenmesin
+      final addedMonth = RecurringIncomeService.monthKey(_selectedDate);
+      if (addedMonth.compareTo(widget.settings.lastIncomeMonth) > 0) {
+        widget.settings.setLastIncomeMonth(addedMonth);
+      }
+    }
+
+    // 2. Tekrarlayan gelir konfigürasyonunu kaydet (tutar + gün + kategori + başlık)
     if (categoryId != null) {
       widget.settings.setRecurringIncomeConfig(
         amount: parsed,
@@ -946,22 +985,7 @@ class _MonthlyIncomeDialogState extends State<_MonthlyIncomeDialog> {
       widget.settings.setMonthlyIncome(parsed);
     }
 
-    // 2. Şu anki tarih için işlem olarak da ekle (istenirse)
-    if (_addAsTransaction && categoryId != null) {
-      final tx = models.Transaction(
-        title: title,
-        amount: parsed,
-        type: 'gelir',
-        categoryId: categoryId,
-        date: _selectedDate,
-        description: 'Aylık gelir — her ayın ${_selectedDate.day}. günü otomatik eklenir',
-      );
-      Provider.of<TransactionProvider>(
-        context,
-        listen: false,
-      ).addTransaction(tx);
-    }
-
+    if (!mounted) return;
     Navigator.of(context).pop();
 
     final dayLabel = _selectedDate.day;
@@ -1192,7 +1216,7 @@ class _MonthlyIncomeDialogState extends State<_MonthlyIncomeDialog> {
                 Expanded(
                   flex: 2,
                   child: ElevatedButton.icon(
-                    onPressed: _save,
+                    onPressed: _isSaving ? null : _save,
                     icon: const Icon(Icons.check, size: 18),
                     label: const Text(
                       'Kaydet',

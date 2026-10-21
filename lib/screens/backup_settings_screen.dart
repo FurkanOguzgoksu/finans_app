@@ -34,7 +34,7 @@ class BackupSettingsScreen extends StatelessWidget {
                     children: [
                       RadioListTile<BackupType>(
                         title: const Text('Cihaza Kaydet (JSON)'),
-                        subtitle: const Text('Verileri telefon hafızasına kaydeder.'),
+                        subtitle: const Text("Yedek dosyası oluşturur; Drive'a, e-postaya veya cihaza kaydedebilirsiniz."),
                         value: BackupType.json,
                       ),
                       RadioListTile<BackupType>(
@@ -53,7 +53,7 @@ class BackupSettingsScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: provider.lastMessage!.contains('başarı')
+                      color: provider.lastSucceeded
                           ? Colors.green.withValues(alpha: 50/255)
                           : Colors.red.withValues(alpha: 50/255),
                       borderRadius: BorderRadius.circular(8),
@@ -62,7 +62,7 @@ class BackupSettingsScreen extends StatelessWidget {
                       provider.lastMessage!,
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: provider.lastMessage!.contains('başarı')
+                        color: provider.lastSucceeded
                             ? Colors.green.shade800
                             : Colors.red.shade800,
                       ),
@@ -84,7 +84,6 @@ class BackupSettingsScreen extends StatelessWidget {
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
-                        // ui preview için geçici false kontrolü bypass edildi
                         onPressed: () => provider.performBackup(),
                       ),
                       const SizedBox(height: 16),
@@ -95,9 +94,9 @@ class BackupSettingsScreen extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
                         onPressed: () async {
-                          await provider.performRestore();
+                          final restored = await provider.performRestore();
                           // Geri yükleme sonrası UI'ı güncellemek için verileri yeniden çek
-                          if (context.mounted) {
+                          if (restored && context.mounted) {
                             Provider.of<CategoryProvider>(context, listen: false).loadCategories();
                             Provider.of<TransactionProvider>(context, listen: false).loadTransactions();
                           }

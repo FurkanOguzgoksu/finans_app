@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:finans_app/providers/transaction_provider.dart';
+import 'package:finans_app/providers/settings_provider.dart';
 import 'package:finans_app/utils/currency_formatter.dart';
 
 class BudgetProgressCard extends StatelessWidget {
@@ -8,10 +9,11 @@ class BudgetProgressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<TransactionProvider>(
-      builder: (context, provider, child) {
-        final double totalExpense = provider.totalExpense;
-        final double budgetLimit = provider.budgetLimit;
+    return Consumer2<TransactionProvider, SettingsProvider>(
+      builder: (context, provider, settings, child) {
+        // Aylık bütçe yalnızca bu ayın giderleriyle karşılaştırılır
+        final double totalExpense = provider.currentMonthExpense;
+        final double budgetLimit = settings.budgetLimit;
         final double progress = budgetLimit > 0
             ? (totalExpense / budgetLimit).clamp(0.0, 1.0)
             : 0.0;
@@ -23,7 +25,7 @@ class BudgetProgressCard extends StatelessWidget {
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: () {
-              _showBudgetDialog(context, provider);
+              _showBudgetDialog(context, settings);
             },
             child: Padding(
               padding: const EdgeInsets.all(20.0),
@@ -116,9 +118,9 @@ class BudgetProgressCard extends StatelessWidget {
     );
   }
 
-  void _showBudgetDialog(BuildContext context, TransactionProvider provider) {
+  void _showBudgetDialog(BuildContext context, SettingsProvider settings) {
     final TextEditingController controller = TextEditingController(
-      text: CurrencyFormatter.format(provider.budgetLimit),
+      text: CurrencyFormatter.format(settings.budgetLimit),
     );
 
     showDialog(
@@ -143,7 +145,7 @@ class BudgetProgressCard extends StatelessWidget {
             onPressed: () {
               final double? newLimit = CurrencyFormatter.parse(controller.text);
               if (newLimit != null && newLimit > 0) {
-                provider.setBudgetLimit(newLimit);
+                settings.setBudgetLimit(newLimit);
                 Navigator.of(ctx).pop();
               }
             },

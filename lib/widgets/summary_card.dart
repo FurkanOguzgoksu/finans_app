@@ -7,12 +7,16 @@ class SummaryCard extends StatelessWidget {
   final double balance;
   final double monthlyIncome;
 
+  /// Bu ayın gider toplamı; tasarruf, aylık gelirle bunun farkıdır
+  final double currentMonthExpense;
+
   const SummaryCard({
     super.key,
     required this.totalIncome,
     required this.totalExpense,
     required this.balance,
     this.monthlyIncome = 0.0,
+    this.currentMonthExpense = 0.0,
   });
 
   @override
@@ -167,7 +171,7 @@ class SummaryCard extends StatelessWidget {
 
   Widget _buildSavingsRow(BuildContext context, ColorScheme colorScheme) {
     final effectiveIncome = monthlyIncome > 0 ? monthlyIncome : 1.0;
-    final savingsAmount = monthlyIncome - totalExpense;
+    final savingsAmount = monthlyIncome - currentMonthExpense;
     final savingsRate = ((savingsAmount / effectiveIncome) * 100).clamp(-100.0, 100.0);
     final isSaving = savingsAmount >= 0;
 

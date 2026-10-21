@@ -104,8 +104,11 @@ class DatabaseService {
       await db.execute('DROP TABLE IF EXISTS transactions');
       await db.execute('DROP TABLE IF EXISTS categories');
 
-      // Yepyeni şemayı ve varsayılan kategorileri baştan oluşturalım
+      // Yepyeni şemayı ve varsayılan kategorileri baştan oluşturalım.
+      // _onCreate güncel şemayı (items_json dahil) kurduğu için sonraki
+      // migration adımları atlanır; aksi halde kolon iki kez eklenip hata verir.
       await _onCreate(db, newVersion);
+      return;
     }
     if (oldVersion < 3) {
       // items_json kolonu eklendi

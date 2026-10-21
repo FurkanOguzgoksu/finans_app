@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:provider/single_child_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'services/supabase_service.dart';
@@ -39,9 +40,9 @@ void main() async {
   };
   // ─────────────────────────────────────────────────────
 
-  // Çevre değişkenlerini yükle (Hata olursa yoksay, fallback devam eder)
+  // Çevre değişkenlerini yükle (dosya yoksa boş yüklenir, AI özellikleri uyarı verir)
   try {
-    await dotenv.load(fileName: 'assets/.env');
+    await dotenv.load(fileName: 'assets/env/.env', isOptional: true);
   } catch (e) {
     debugPrint('.env dosyası yüklenemedi: $e');
   }
@@ -62,22 +63,34 @@ void main() async {
 
   runApp(
     MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => ThemeProvider()),
-        ChangeNotifierProvider(create: (_) => SettingsProvider()),
-        ChangeNotifierProvider(create: (_) => BackupProvider()),
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => OcrProvider()),
-        ChangeNotifierProvider(
-          create: (_) => CategoryProvider()..loadCategories(),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => TransactionProvider()..loadTransactions(),
-        ),
-      ],
+      providers: buildAppProviders(prefs),
       child: FinansApp(showOnboarding: !hasSeenOnboarding),
     ),
   );
+}
+
+/// Uygulamanın provider listesi. Kullanıcıya özel veri tutan provider'lar
+/// AuthProvider'ı dinler; giriş/çıkışta kendilerini yükler veya temizler.
+/// [authProvider] testlerde sahte oturum vermek içindir.
+List<SingleChildWidget> buildAppProviders(
+  SharedPreferences prefs, {
+  AuthProvider? authProvider,
+}) {
+  return [
+    ChangeNotifierProvider(create: (_) => authProvider ?? AuthProvider()),
+    ChangeNotifierProvider(create: (_) => ThemeProvider()),
+    ChangeNotifierProvider(
+      create: (context) => SettingsProvider(prefs, context.read<AuthProvider>()),
+    ),
+    ChangeNotifierProvider(create: (_) => BackupProvider()),
+    ChangeNotifierProvider(create: (_) => OcrProvider()),
+    ChangeNotifierProvider(
+      create: (context) => CategoryProvider(context.read<AuthProvider>()),
+    ),
+    ChangeNotifierProvider(
+      create: (context) => TransactionProvider(context.read<AuthProvider>()),
+    ),
+  ];
 }
 
 

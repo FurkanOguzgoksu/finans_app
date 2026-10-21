@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../providers/transaction_provider.dart';
 import '../providers/category_provider.dart';
 import 'package:finans_app/utils/currency_formatter.dart';
+import 'package:finans_app/utils/date_helper.dart';
 import '../models/transaction.dart' as models;
 
 class _TransactionItemRow {
@@ -33,9 +34,9 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
   final _formKey = GlobalKey<FormState>();
 
   // Form Verileri
-  // Form Verileri
   bool _isIncome = false; // Varsayılan Gider
   bool _hasDescription = false; // Açıklama kutusu gösterimi
+  bool _isSaving = false; // Kayıt sürerken butonu kilitler
 
   final _titleController = TextEditingController();
   final _amountController = TextEditingController();
@@ -104,11 +105,17 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
   }
 
   void _presentDatePicker() {
+    // İleri tarihli bir işlem düzenlenirken (ör. aylık gelir) seçici hata vermesin
+    final bounds = DateHelper.pickerBounds(
+      _selectedDate,
+      first: DateTime(2020),
+      last: DateTime.now(),
+    );
     showDatePicker(
       context: context,
       initialDate: _selectedDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
+      firstDate: bounds.first,
+      lastDate: bounds.last,
     ).then((pickedDate) {
       if (pickedDate == null) return;
       if (!mounted) return;
@@ -116,7 +123,7 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
         context: context,
         initialTime: TimeOfDay.fromDateTime(_selectedDate),
       ).then((pickedTime) {
-        if (pickedTime == null) return;
+        if (pickedTime == null || !mounted) return;
         setState(() {
           _selectedDate = DateTime(
             pickedDate.year,
@@ -156,7 +163,7 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
     return total;
   }
 
-  void _submitData() {
+  Future<void> _submitData() async {
     if (!_formKey.currentState!.validate() || _selectedCategoryId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -177,7 +184,6 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
     if (_isIncome) {
       enteredAmount = CurrencyFormatter.parse(_amountController.text);
     } else {
-      enteredAmount = _calculateTotalDetailedAmount();
       transactionItems = [];
 
       for (var row in _itemRows) {
@@ -189,6 +195,11 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
           );
         }
       }
+      // Toplam, kaydedilen kalemlerle tutarlı olsun (adı boş satırlar sayılmaz)
+      enteredAmount = transactionItems.fold<double>(
+        0.0,
+        (total, item) => total + item.amount,
+      );
 
       if (transactionItems.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -204,41 +215,63 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
       return;
     }
 
+    final provider = Provider.of<TransactionProvider>(context, listen: false);
+    final messenger = ScaffoldMessenger.of(context);
     final tx = widget.transaction;
-    if (tx != null && tx.id != null) {
-      // Güncelleme modu
-      final updatedTx = models.Transaction(
-        id: tx.id,
-        title: enteredTitle,
-        amount: enteredAmount,
-        type: _isIncome ? 'gelir' : 'gider',
-        categoryId: _selectedCategoryId!,
-        date: _selectedDate,
-        description: enteredDescription.isNotEmpty ? enteredDescription : null,
-        items: transactionItems,
+    final isUpdate = tx != null && tx.id != null;
+
+    setState(() => _isSaving = true);
+    try {
+      if (isUpdate) {
+        // Güncelleme modu: fiş bağlantısı ve oluşturulma tarihi korunur
+        final updatedTx = models.Transaction(
+          id: tx.id,
+          title: enteredTitle,
+          amount: enteredAmount,
+          type: _isIncome ? 'gelir' : 'gider',
+          categoryId: _selectedCategoryId!,
+          date: _selectedDate,
+          description: enteredDescription.isNotEmpty ? enteredDescription : null,
+          receiptId: tx.receiptId,
+          items: transactionItems,
+          createdAt: tx.createdAt,
+        );
+        await provider.updateTransaction(updatedTx);
+      } else {
+        // Yeni ekleme modu
+        final newTx = models.Transaction(
+          title: enteredTitle,
+          amount: enteredAmount,
+          type: _isIncome ? 'gelir' : 'gider',
+          categoryId: _selectedCategoryId!,
+          date: _selectedDate,
+          description: enteredDescription.isNotEmpty ? enteredDescription : null,
+          items: transactionItems,
+        );
+        await provider.addTransaction(newTx);
+      }
+    } catch (e) {
+      debugPrint('İşlem kaydedilemedi: $e');
+      if (mounted) setState(() => _isSaving = false);
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('İşlem kaydedilemedi. İnternet bağlantınızı kontrol edin.'),
+          backgroundColor: Colors.redAccent,
+        ),
       );
-      Provider.of<TransactionProvider>(context, listen: false).updateTransaction(updatedTx);
-      Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('İşlem başarıyla güncellendi!')),
-      );
-    } else {
-      // Yeni ekleme modu
-      final newTx = models.Transaction(
-        title: enteredTitle,
-        amount: enteredAmount,
-        type: _isIncome ? 'gelir' : 'gider',
-        categoryId: _selectedCategoryId!,
-        date: _selectedDate,
-        description: enteredDescription.isNotEmpty ? enteredDescription : null,
-        items: transactionItems,
-      );
-      Provider.of<TransactionProvider>(context, listen: false).addTransaction(newTx);
-      Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${_isIncome ? "Gelir" : "Gider"} başarıyla eklendi!')),
-      );
+      return;
     }
+
+    if (mounted) Navigator.of(context).pop();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          isUpdate
+              ? 'İşlem başarıyla güncellendi!'
+              : '${_isIncome ? "Gelir" : "Gider"} başarıyla eklendi!',
+        ),
+      ),
+    );
   }
 
   @override
@@ -454,7 +487,7 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
               const SizedBox(height: 32),
 
               ElevatedButton(
-                onPressed: _submitData,
+                onPressed: _isSaving ? null : _submitData,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: theme.colorScheme.primary,
                   foregroundColor: theme.colorScheme.onPrimary,

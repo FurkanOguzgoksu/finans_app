@@ -23,16 +23,13 @@ class _AppLockWrapperState extends State<AppLockWrapper>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // İlk açılışta kilitli mi diye kontrol et
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final settings = Provider.of<SettingsProvider>(context, listen: false);
-      if (settings.appLockEnabled) {
-        setState(() {
-          _isLocked = true;
-        });
-        _authenticate();
-      }
-    });
+    // İlk açılışta kilitli mi diye kontrol et. Ayarlar senkron yüklendiği için
+    // değer burada doğrudur; kilit ilk frame'den itibaren içeriği gizler.
+    final settings = Provider.of<SettingsProvider>(context, listen: false);
+    if (settings.appLockEnabled) {
+      _isLocked = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _authenticate());
+    }
   }
 
   @override

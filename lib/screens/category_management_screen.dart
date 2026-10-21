@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:finans_app/models/category.dart';
 import 'package:finans_app/providers/category_provider.dart';
+import 'package:finans_app/providers/transaction_provider.dart';
 
 /// Kategori Yönetimi Ekranı
 /// Kullanıcı gelir/gider kategorilerini ekleyebilir, düzenleyebilir ve silebilir.
@@ -389,10 +390,12 @@ class CategoryManagementScreen extends StatelessWidget {
                     color: colorHex,
                   );
 
-                  context.read<CategoryProvider>().addCategory(category);
-                  Navigator.of(ctx).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('"$name" kategorisi eklendi')),
+                  _runCategoryChange(
+                    context,
+                    dialogContext: ctx,
+                    action: () => context.read<CategoryProvider>().addCategory(category),
+                    successMessage: '"$name" kategorisi eklendi',
+                    errorMessage: 'Kategori eklenemedi.',
                   );
                 },
                 child: const Text('Ekle'),
@@ -572,10 +575,12 @@ class CategoryManagementScreen extends StatelessWidget {
                     color: colorHex,
                   );
 
-                  context.read<CategoryProvider>().updateCategory(updated);
-                  Navigator.of(ctx).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('"$name" kategorisi güncellendi')),
+                  _runCategoryChange(
+                    context,
+                    dialogContext: ctx,
+                    action: () => context.read<CategoryProvider>().updateCategory(updated),
+                    successMessage: '"$name" kategorisi güncellendi',
+                    errorMessage: 'Kategori güncellenemedi.',
                   );
                 },
                 child: const Text('Kaydet'),
@@ -605,18 +610,49 @@ class CategoryManagementScreen extends StatelessWidget {
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () {
               if (category.id != null) {
-                context.read<CategoryProvider>().deleteCategory(category.id!);
-                Navigator.of(ctx).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('"${category.name}" kategorisi silindi'),
-                  ),
+                final txProvider = context.read<TransactionProvider>();
+                _runCategoryChange(
+                  context,
+                  dialogContext: ctx,
+                  action: () async {
+                    await context.read<CategoryProvider>().deleteCategory(category.id!);
+                    // Silinen kategorinin işlemleri de etkilenmiş olabilir
+                    await txProvider.loadTransactions();
+                  },
+                  successMessage: '"${category.name}" kategorisi silindi',
+                  errorMessage: 'Kategori silinemedi.',
                 );
               }
             },
             child: const Text('Sil', style: TextStyle(color: Colors.white)),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Kategori ekleme/güncelleme/silme işlemini çalıştırır: diyaloğu kapatır,
+/// işlemin bitmesini bekler ve sonucu kullanıcıya bildirir.
+Future<void> _runCategoryChange(
+  BuildContext context, {
+  required BuildContext dialogContext,
+  required Future<void> Function() action,
+  required String successMessage,
+  required String errorMessage,
+}) async {
+  final messenger = ScaffoldMessenger.of(context);
+  final future = action();
+  Navigator.of(dialogContext).pop();
+  try {
+    await future;
+    messenger.showSnackBar(SnackBar(content: Text(successMessage)));
+  } catch (e) {
+    debugPrint('Kategori işlemi başarısız: $e');
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text('$errorMessage İnternet bağlantınızı kontrol edin.'),
+        backgroundColor: Colors.redAccent,
       ),
     );
   }

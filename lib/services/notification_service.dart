@@ -15,8 +15,15 @@ class NotificationService {
 
   bool _isInitialized = false;
 
+  /// Bildirimler yalnızca mobil platformlarda kurulur. Diğer platformlarda
+  /// (ör. Windows) eklenti ek ayar ister ve hata fırlatırsa uygulama açılmaz.
+  bool get _isSupportedPlatform =>
+      !kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.android ||
+          defaultTargetPlatform == TargetPlatform.iOS);
+
   Future<void> init() async {
-    if (_isInitialized) return;
+    if (_isInitialized || !_isSupportedPlatform) return;
 
     // Timezone initalization
     tz.initializeTimeZones();
@@ -51,6 +58,7 @@ class NotificationService {
   }
 
   Future<bool> requestPermissions() async {
+    if (!_isInitialized) return false;
     if (defaultTargetPlatform == TargetPlatform.android) {
       final status = await Permission.notification.request();
       return status.isGranted;
@@ -70,19 +78,29 @@ class NotificationService {
 
   /// Tüm zamanlanmış bildirimleri iptal eder.
   Future<void> cancelAllNotifications() async {
-    await _localNotificationsPlugin.cancelAll();
+    if (!_isInitialized) return;
+    try {
+      await _localNotificationsPlugin.cancelAll();
+    } catch (e) {
+      debugPrint('Bildirimler iptal edilemedi: $e');
+    }
   }
 
   /// Kullanıcının belirlediği saatlere göre günlük bildirimleri kurar.
   Future<void> scheduleDailyReminders(List<TimeOfDay> times) async {
+    if (!_isInitialized) return;
     await cancelAllNotifications();
 
     if (times.isEmpty) return;
 
-    int id = 0;
-    for (var time in times) {
-      await _scheduleDailyNotification(id, time);
-      id++;
+    try {
+      int id = 0;
+      for (var time in times) {
+        await _scheduleDailyNotification(id, time);
+        id++;
+      }
+    } catch (e) {
+      debugPrint('Günlük hatırlatıcılar kurulamadı: $e');
     }
   }
 
@@ -127,7 +145,9 @@ class NotificationService {
       body: 'Bugün hiç harcama girdiniz mi? Fişlerinizi taramayı unutmayın!',
       scheduledDate: scheduledDate,
       notificationDetails: platformDetails,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      // Hatırlatıcı için birkaç dakikalık sapma sorun değil; tam zamanlı alarm
+      // (exact alarm) özel izin ister ve Play Store politikasına takılır.
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       matchDateTimeComponents: DateTimeComponents.time, // Her gün tekrarlaması için
     );
   }

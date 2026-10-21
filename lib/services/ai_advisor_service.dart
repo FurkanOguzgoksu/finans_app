@@ -7,16 +7,19 @@ class AiAdvisorService {
     required double totalExpense,
     required Map<String, double> expensesByCategory,
   }) async {
-    final apiKey = dotenv.env['GEMINI_API_KEY'];
-    
+    // .env dosyası yoksa dotenv boş yüklenir; hiç yüklenemediyse env'e erişim hata verir
+    final apiKey = dotenv.isInitialized ? dotenv.maybeGet('GEMINI_API_KEY') : null;
+
     if (apiKey == null || apiKey.isEmpty || apiKey == 'BURAYA_API_KEYINIZI_YAZIN') {
-      throw Exception('API Anahtarı bulunamadı! Lütfen assets/.env dosyanıza GEMINI_API_KEY ekleyin.');
+      throw Exception('API Anahtarı bulunamadı! Lütfen assets/env/.env dosyanıza GEMINI_API_KEY ekleyin.');
     }
 
+    // gemini-1.5 modelleri kapatıldı; 'gemini-flash-latest' güncel Flash
+    // modeline yönlenen takma addır
     final modelsToTry = [
       'gemini-2.5-flash',
-      'gemini-1.5-flash-latest',
-      'gemini-1.5-pro-latest'
+      'gemini-flash-latest',
+      'gemini-2.5-flash-lite',
     ];
 
     String? responseText;
@@ -60,12 +63,13 @@ Lütfen aşağıdaki kurallara uyarak kullanıcıya finansal bir değerlendirme 
           break;
         }
       } catch (e) {
-        lastError = e.toString();
+        final error = e.toString();
+        lastError = error;
         // Eğer hata modeli bulamamak, 503 (yüksek talep) veya 429 ise diğer modele geç
-        if (!lastError!.contains('not found') && 
-            !lastError!.contains('v1beta') && 
-            !lastError!.contains('503') && 
-            !lastError!.contains('429')) {
+        if (!error.contains('not found') &&
+            !error.contains('v1beta') &&
+            !error.contains('503') &&
+            !error.contains('429')) {
            throw Exception('Yapay zeka hatası: $e');
         }
       }
