@@ -1,7 +1,7 @@
 # 📋 Memory Bank - Finans Uygulaması
 
 > Bu dosya, haftalık yapılacak görevleri takip etmek için kullanılır.
-> Son güncelleme: 1 Nisan 2026
+> Son güncelleme: 21 Ekim 2026
 
 ---
 
@@ -11,7 +11,7 @@
 |-------|-------|
 | **Proje** | Smart Financial Analysis & Expense Tracking |
 | **Platform** | Flutter (Dart) |
-| **Durum** | Aktif Geliştirme |
+| **Durum** | Tamamlandı (Haziran 2026'da teslim edildi, Ekim 2026'da bakım yapıldı) |
 
 ---
 
@@ -34,9 +34,9 @@
 
 | # | Görev | Durum | Notlar |
 |---|-------|-------|--------|
-| 1 | Transaction, Category ve Receipt model sınıflarının tanımlanması | ✅ Tamamlandı | toMap/fromMap/copyWith metotları ile birlikte |
-| 2 | SQLite tablo şemalarının (CREATE TABLE) tasarlanması | ✅ Tamamlandı | categories, transactions, receipts tabloları + varsayılan kategoriler |
-| 3 | Repository pattern arayüzlerinin (abstract class) belirlenmesi | ✅ Tamamlandı | TransactionRepository, CategoryRepository, ReceiptRepository |
+| 1 | Transaction ve Category model sınıflarının tanımlanması | ✅ Tamamlandı | toMap/fromMap/copyWith metotları ile birlikte |
+| 2 | SQLite tablo şemalarının (CREATE TABLE) tasarlanması | ✅ Tamamlandı | categories, transactions tabloları + varsayılan kategoriler (veriler Hafta 14'te Supabase'e taşındı) |
+| 3 | Repository pattern arayüzlerinin (abstract class) belirlenmesi | ✅ Tamamlandı | TransactionRepository, CategoryRepository |
 | 4 | Uygulama navigasyon yapısının go_router ile oluşturulması | ✅ Tamamlandı | StatefulShellRoute + 4 tab (Ana Sayfa, İşlemler, İstatistik, Ayarlar) + Fiş Tarama |
 | 5 | Teknik mimari dokümanının hazırlanması | ✅ Tamamlandı | ARCHITECTURE.md oluşturuldu |
 
@@ -51,13 +51,12 @@
 | 1 | DatabaseHelper singleton sınıfı ve migration yönetimi | ✅ Tamamlandı | |
 | 2 | TransactionDao: CRUD ve tarih filtreli metotlar | ✅ Tamamlandı | |
 | 3 | CategoryDao: CRUD ve seed data | ✅ Tamamlandı | |
-| 4 | ReceiptDao: OCR için ham fiş kaydı | ✅ Tamamlandı | |
-| 5 | BackupService soyut sınıfı (strateji pattern) | ✅ Tamamlandı | |
-| 6 | JsonBackupService: JSON depolama yedeği | ✅ Tamamlandı | |
-| 7 | FirebaseBackupService: Firestore senkronizasyonu | ✅ Tamamlandı | |
-| 8 | BackupSettingsScreen: JSON veya Supabase yedekleme ayar ekranı | ✅ Tamamlandı | |
-| 9 | BackupProvider: Yedekleme durumunun state'e entegrasyonu | ✅ Tamamlandı | |
-| 10 | flutter_test ile birim testlerinin yazılması | ✅ Tamamlandı | test/services altına testler eklendi |
+| 4 | BackupService soyut sınıfı (strateji pattern) | ✅ Tamamlandı | |
+| 5 | JsonBackupService: JSON depolama yedeği | ✅ Tamamlandı | Paylaşım menüsüyle dışa aktarma, dosyadan geri yükleme |
+| 6 | SupabaseBackupService: Supabase bulut yedeği | ✅ Tamamlandı | |
+| 7 | BackupSettingsScreen: JSON veya Supabase yedekleme ayar ekranı | ✅ Tamamlandı | |
+| 8 | BackupProvider: Yedekleme durumunun state'e entegrasyonu | ✅ Tamamlandı | |
+| 9 | flutter_test ile birim testlerinin yazılması | ✅ Tamamlandı | test/services altına testler eklendi |
 
 **Çıktı:** ✅ CRUD işlemleri çalışıyor, birim testleri başarılı.
 
@@ -83,10 +82,10 @@
 
 | # | Görev | Durum | Notlar |
 |---|-------|-------|--------|
-| 1 | UI klasör yapısının oluşturulması (`screens/`, `widgets/`) | ✅ Tamamlandı | summary_card, chart vb. eklendi |
-| 2 | `fl_chart` ile aylık gelir-gider grafiklerinin tasarlanması | ✅ Tamamlandı | DashboardChart eklendi |
+| 1 | UI klasör yapısının oluşturulması (`screens/`, `widgets/`) | ✅ Tamamlandı | SummaryCard, BudgetProgressCard vb. eklendi |
+| 2 | `fl_chart` ile aylık gelir-gider grafiklerinin tasarlanması | ✅ Tamamlandı | İstatistik ekranında gelir/gider pasta ve 6 aylık bar grafikleri |
 | 3 | Son işlemler (transaction) listesinin kart tasarımları | ✅ Tamamlandı | TransactionListItem eklendi |
-| 4 | "Transaction Ekle" Floating Action Button (FAB) entegrasyonu | ✅ Tamamlandı | HomeScreen'e test butonu olarak eklendi |
+| 4 | "Transaction Ekle" Floating Action Button (FAB) entegrasyonu | ✅ Tamamlandı | HomeScreen'de "İşlem Ekle" menüsü: manuel giriş, kamera, PDF |
 | 5 | Responsive düzen ayarlamaları (mobil vs geniş ekran) | ✅ Tamamlandı | ResponsiveLayout eklendi |
 | 6 | Onboarding (Tanıtım) Ekranı Geliştirme | ✅ Tamamlandı | SharedPreferences + PageView |
 
@@ -167,7 +166,7 @@
 | 1 | Fiş tarama ekranı arayüzü | ✅ Tamamlandı | StatefulWidget ve Tab formatında _ResultView baştan yazıldı |
 | 2 | OCR sonuçlarının onay ekranında gösterilmesi ve düzenleme modu | ✅ Tamamlandı | Form oluşturuldu, ReceiptParser verileri ile TextController'lara entegrasyon sağlandı |
 | 3 | Kategori otomatik önerisi | ✅ Tamamlandı | İşletme ismi içerisinde (market, petrol vb.) kelime analiziyle harcama kategorisini eşleyen algoritma eklendi |
-| 4 | Onaylanan harcamanın veritabanına kaydedilmesi | ✅ Tamamlandı | TransactionProvider ile SQLlite sistemine kaydediliyor |
+| 4 | Onaylanan harcamanın veritabanına kaydedilmesi | ✅ Tamamlandı | TransactionProvider ile veritabanına kaydediliyor (Hafta 14'ten itibaren Supabase) |
 
 **Çıktı:** ✅ Uçtan uca fiş tarama akışı tamamlandı.
 
@@ -194,7 +193,7 @@
 
 | # | Görev | Durum | Notlar |
 |---|-------|-------|--------|
-| 1 | LineChart ile gider trend grafiği | ✅ Tamamlandı | Bar chart ile gelir/gider karşılaştırmalı 6 aylık trend |
+| 1 | Gider trend grafiği | ✅ Tamamlandı | Bar chart ile gelir/gider karşılaştırmalı 6 aylık trend |
 | 2 | En yüksek harcama kategorisi istatistikleri | ✅ Tamamlandı | `_buildTopExpensesCard` ile ayın en büyük 5 harcaması |
 | 3 | Tasarruf oranı ve Harcama Hedefi renk uyarıları | ✅ Tamamlandı | `_buildSavingsCard`: yeşil→sarı→turuncu→kırmızı progress bar + tasarruf/açık kartları |
 | 4 | Rapor ekranının son kullanıcı testleri | ✅ Tamamlandı | flutter analyze temiz, manuel test yapıldı |
@@ -222,8 +221,8 @@
 | # | Görev | Durum | Notlar |
 |---|-------|-------|--------|
 | 1 | Supabase Authentication (Kullanıcı Girişi) | ✅ Tamamlandı | `auth_provider.dart` ile e-posta/şifre altyapısı kuruldu |
-| 2 | Giriş / Kayıt Arayüzlerinin Tasarımı | ✅ Tamamlandı | Şık login ekranı, "Şifremi Unuttum" akışı ve "Google ile Giriş Yap" butonları tasarlandı |
-| 3 | Supabase Veritabanı Senkronizasyonu | ✅ Tamamlandı | `supabase_service.dart` üzerinden bulut yedekleme/eşitleme özelliği bağlandı |
+| 2 | Giriş / Kayıt Arayüzlerinin Tasarımı | ✅ Tamamlandı | Şık login ve kayıt ekranları, "Google ile Giriş Yap" butonu tasarlandı |
+| 3 | Supabase Veritabanı Entegrasyonu | ✅ Tamamlandı | Kategori ve işlem DAO'ları SQLite yerine Supabase'i kullanacak şekilde güncellendi |
 
 **Çıktı:** ✅ Supabase Authentication ve Bulut Veritabanı entegrasyonu tamamlandı.
 
@@ -236,7 +235,7 @@
 | # | Görev | Durum | Notlar |
 |---|-------|-------|--------|
 | 1 | Biyometrik Uygulama Kilidi (App Lock) | ✅ Tamamlandı | `local_auth` paketi ile 2 dk zaman aşımlı yüz tanıma/parmak izi güvenliği eklendi |
-| 2 | CSV/Excel Veri Dışa Aktarımı | ✅ Tamamlandı | `csv` ve `share_plus` ile tüm harcamaları dışa aktarma yeteneği eklendi |
+| 2 | CSV/Excel Veri Dışa Aktarımı | ✅ Tamamlandı | `csv` ve `share_plus` ile tüm harcamaları Excel'de açılabilen CSV olarak dışa aktarma yeteneği eklendi |
 | 3 | Günlük Hatırlatıcı Bildirimler | ✅ Tamamlandı | `flutter_local_notifications` ile internet gerektirmeyen zamanlı bildirim altyapısı kuruldu |
 | 4 | Uygulama İkonlarının Eklenmesi | ✅ Tamamlandı | `flutter_launcher_icons` ile Android/iOS native ikonları projeye entegre edildi |
 | 5 | İstatistik Ekranına AI Advisor Entegrasyonu | ✅ Tamamlandı | Gemini AI ile kullanıcı harcamalarına özel akıllı finansal tavsiyeler eklendi |
@@ -264,6 +263,25 @@
 
 ---
 
+### Teslim Sonrası Bakım —> Ekim 2026 (Kod İncelemesi ve Hata Düzeltmeleri)
+
+| # | Görev | Durum | Notlar |
+|---|-------|-------|--------|
+| 1 | Aylık bütçe kartının yalnızca bu ayın giderini sayması | ✅ Tamamlandı | Önceden tüm zamanların gideriyle karşılaştırılıyordu |
+| 2 | Tekrarlayan gelirin aynı ay iki kez eklenmesinin önlenmesi | ✅ Tamamlandı | `RecurringIncomeService.monthKey` ile ay takibi |
+| 3 | Uygulama kilidinin ilk açılışta devreye girmesi | ✅ Tamamlandı | Ayarlar `SharedPreferences` örneğiyle senkron yükleniyor |
+| 4 | Kullanıcıya özel veri ve ayarlar | ✅ Tamamlandı | Provider'lar `UserSession` ile oturumu dinliyor; bütçe/gelir/profil fotoğrafı hesaba özel |
+| 5 | Kayıt/silme hatalarının kullanıcıya gösterilmesi | ✅ Tamamlandı | İşlemler bekleniyor, yükleme hatasında "Tekrar Dene" ekranı |
+| 6 | JSON yedeğinin geri yüklenmesi | ✅ Tamamlandı | Kategori eşleme, aynı yedek tekrar yüklenince kopya oluşmuyor |
+| 7 | Android/iOS platform düzeltmeleri | ✅ Tamamlandı | Android 12 galeri izni, iOS izin açıklamaları, exact alarm izni kaldırıldı |
+| 8 | OCR/AI tarih doğrulama | ✅ Tamamlandı | `DateHelper` ile geçersiz tarihler reddediliyor |
+| 9 | Kullanılmayan kodun temizlenmesi | ✅ Tamamlandı | Hiçbir yerde kullanılmayan DashboardChart, ReceiptDao, ReceiptRepository ve Receipt modeli kaldırıldı |
+| 10 | Testlerin genişletilmesi | ✅ Tamamlandı | Sahte depo/oturum ile 45 test, hepsi geçiyor |
+
+**Çıktı:** ✅ İncelemede bulunan hatalar düzeltildi, dokümanlar kodla uyumlu hale getirildi.
+
+---
+
 <!--
 Durum Emojileri:
 ⬜ Bekliyor
@@ -280,7 +298,7 @@ Durum Emojileri:
 - **Hafta 10 Kapanış Notları:** Tüm görevler başarıyla uygulandı. `receipt_scan_screen.dart` üzerine büyük bir entegrasyon gerçekleştirildi. `_ResultView` ekranı StatefulWidget'a çevrilerek gelişmiş bir onay panosuna kavuştu. Sistem önce OCR sonucu okunan parçaları Hafta 9 mimarisiyle çözümlüyor, elde edilen tutar ve tarihleri form paneline otomatik yazdırıyor. Özel `_autoCategorize` yeteneği sayesinde marka adı üzerinden zeki kategori tahmini yapılıyor (Starbucks ➔ Yemek, BP ➔ Ulaşım gibi). Tamamlanan form `TransactionProvider` ile Database'ye sorunsuzca "Gider" olarak aktarılmaktadır.
 - **Hafta 9 Kapanış Notları:** Tüm görevler yürütüldü. `lib/models/parsed_receipt.dart` dosyası oluşturularak ayrıştırılmış ocr verisi `ParsedReceipt` modeliyle yapılandırıldı. `lib/services/receipt_parser.dart` oluşturularak "TOPLAM", "ODENEN", "KREDI KARTI" anahtar kelimelerini tanıyıp Türk fişlerindeki Tutar ve Tarihi ayıklayan `parse(String)` RegExp motoru geliştirildi. Eğer direkt bir match bulamazsa en büyük rakamı fiyat olarak alma (fallback) fonksiyonelliği eklendi. `receipt_parser_test.dart` üzerinde yazılan unit testler başarıyla çalışıyor.
 - **Hafta 8 Kapanış Notları:** Tüm planlı görevler tamamlandı. `OcrService` (lib/services/ocr_service.dart) Google ML Kit `TextRecognizer` ile on-device metin tanıma sağlıyor. `OcrProvider` (lib/providers/ocr_provider.dart) enum-tabanlı state machine ile tam akış yönetimi: idle→picking→cropping→processing→done/error. `ReceiptScanScreen` 5 farklı görünüm ile premium UI: gradient arka plan, glassmorphism kartlar, AnimatedSwitcher geçişleri, pulse animasyonu, SelectableText ile metin seçimi ve panoya kopyalama. `image_cropper` dikdörtgen kırpma ile ön işleme. `OcrException` özel hata sınıfı ile kapsamlı error handling. **Not:** google_mlkit_text_recognition sadece Android/iOS destekler, Windows/Web'de çalışmaz.
-- **Hafta 7 Kapanış Notları:** Tüm planlı görevler tamamlandı. Ek olarak: Profil fotoğrafında `permission_handler` ile Android izin sistemi (kamera/galeri/kalıcı red yönetimi), `CropStyle.circle` ile yuvarlak kırpma, `InteractiveViewer` ile pinch-to-zoom ekranı, `UCropTheme` ile Android native status bar taşma sorunu düzeldi. `SystemChrome.setSystemUIOverlayStyle` ile tüm uygulamada karanlık/aydınlık moda göre status bar/nav bar rengi otomatik dönüşüyor. Ayarlar ekranında profil avatarinin görünmemesine yol açan `NetworkImage` → `FileImage` bug'u düzeltildi.
+- **Hafta 7 Kapanış Notları:** Tüm planlı görevler tamamlandı. Ek olarak: Profil fotoğrafında `permission_handler` ile kamera izin sistemi (kalıcı red yönetimi; galeri sistem fotoğraf seçicisiyle izinsiz açılıyor), `CropStyle.circle` ile yuvarlak kırpma, `InteractiveViewer` ile pinch-to-zoom ekranı, `UCropTheme` ile Android native status bar taşma sorunu düzeldi. `SystemChrome.setSystemUIOverlayStyle` ile tüm uygulamada karanlık/aydınlık moda göre status bar/nav bar rengi otomatik dönüşüyor. Ayarlar ekranında profil avatarinin görünmemesine yol açan `NetworkImage` → `FileImage` bug'u düzeltildi.
 - **Hafta 6 Bildirimi:** Veritabanında (SQLite) sürüm 1'den kalma tabloların boş olması sebebiyle gizli çökmeler yaşanıyordu. SQLite `version: 2`'ye güncellenerek Migration senaryosu uygulandı. Ayrıca uygulamanın yeni yolu (`2.Dönem/finans_app`) ayarlandı. İşlem Ekleme menüsü Kamera/PDF seçenekleriyle zenginleştirildi.
 
 ---
@@ -288,4 +306,4 @@ Durum Emojileri:
 ## 🔖 Önemli Notlar
 
 - **Bağımlılıklar:** Tüm paketler `flutter pub get` ile başarıyla yüklendi.
-- **Klasör Yapısı:** `lib/` altında 6 ana klasör oluşturuldu (models, repositories, services, screens, widgets, utils).
+- **Klasör Yapısı:** `lib/` altında 7 ana klasör bulunuyor (models, repositories, providers, services, screens, widgets, utils). Ayrıntılı yapı için `ARCHITECTURE.md`'ye bakın.
