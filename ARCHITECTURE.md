@@ -80,11 +80,9 @@ lib/
 │   ├── recurring_income_service.dart # Aylık gelirin otomatik eklenmesi
 │   ├── notification_service.dart    # Günlük hatırlatıcı bildirimleri
 │   ├── export_service.dart          # CSV dışa aktarma
-│   ├── database_service.dart        # Yerel SQLite (Supabase geri yüklemesi için)
-│   └── backup/                      # Yedekleme stratejileri
+│   └── backup/                      # Yedekleme
 │       ├── backup_service.dart      # Ortak arayüz
-│       ├── json_backup_service.dart # JSON dosyası dışa/içe aktarma
-│       └── supabase_backup_service.dart
+│       └── json_backup_service.dart # JSON dosyası dışa/içe aktarma
 ├── screens/                         # UI ekranları
 │   ├── onboarding_screen.dart
 │   ├── login_screen.dart
@@ -121,7 +119,11 @@ lib/
 
 ## Veri Modeli (Supabase)
 
-Uygulama `user_id` göndermez. Bu yüzden tablolarda `user_id` kolonunun varsayılanı `auth.uid()` olmalı ve Row Level Security (RLS) açık olmalıdır. Böylece her kullanıcı yalnızca kendi kayıtlarını görür.
+Şemanın tamamı `supabase/schema.sql` dosyasındadır; Supabase SQL Editor'de çalıştırılarak kurulur.
+
+- **Güvenlik:** Tablolarda Row Level Security (RLS) açıktır; her kullanıcı yalnızca `user_id = auth.uid()` olan kayıtlarını okuyup değiştirebilir. DAO'lar ayrıca her sorguyu `user_id` ile filtreler ve kayıt eklerken `user_id` gönderir.
+- **Sayfalama:** Supabase tek istekte en fazla 1000 satır döndürür. DAO'lar listeleri `SupabaseService.fetchAllPages` ile sayfa sayfa çeker.
+- **Tarihler:** Uygulama tarihleri saat dilimi eki olmadan (yerel saat) gönderir. Postgres bunları UTC kabul eder ve uygulama aynı saat değerini geri okur, yani saat kayması olmaz.
 
 ### categories
 | Sütun | İçerik |
@@ -138,9 +140,9 @@ Uygulama `user_id` göndermez. Bu yüzden tablolarda `user_id` kolonunun varsay�
 |-------|--------|
 | id | Otomatik artan kimlik |
 | title | İşlem başlığı |
-| amount | Tutar |
+| amount | Tutar (`numeric(14,2)`; kuruş hassasiyeti kaybolmaz) |
 | type | `gelir` veya `gider` |
-| category_id | `categories.id` |
+| category_id | `categories.id` (işlemi olan kategori silinemez) |
 | date | İşlem tarihi (ISO 8601) |
 | description | Açıklama; fiş taramasında ham OCR metni |
 | receipt_id | Fiş fotoğrafının veya PDF'in cihazdaki dosya yolu |
@@ -192,5 +194,4 @@ Yeni bir kullanıcının hiç kategorisi yoksa `CategoryProvider` temel kategori
 | csv / share_plus | CSV dışa aktarma ve paylaşım |
 | shared_preferences | Yerel ayarlar |
 | flutter_dotenv | Gemini API anahtarı (`assets/env/.env`) |
-| sqflite | Yerel SQLite (Supabase geri yüklemesi) |
 | intl | Tarih/para formatı |

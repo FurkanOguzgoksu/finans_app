@@ -41,6 +41,13 @@ Fiziksel fişlerin dijitale dönüştürülme süreci 4 aşamadan oluşur:
    flutter run
    ```
 
+### ☁️ Supabase Kurulumu
+
+1. [Supabase](https://supabase.com) üzerinde bir proje oluşturun ve **SQL Editor**'de `supabase/schema.sql` dosyasının içeriğini çalıştırın. Betik tabloları, satır bazlı güvenlik (RLS) politikalarını ve indeksleri kurar; mevcut bir projede tekrar çalıştırılabilir ve kayıtları silmez.
+2. `lib/services/supabase_service.dart` içindeki proje URL'si ve `anon` anahtarını kendi projenizinkilerle değiştirin.
+3. Google ile giriş için **Authentication → URL Configuration → Redirect URLs** listesine `finansapp://login-callback` adresini ekleyin ve **Authentication → Providers** altında Google'ı etkinleştirin.
+4. **Authentication → Providers → Email** altında "Confirm email" açıksa, kullanıcılar kayıttan sonra e-postalarını doğrulayıp giriş yapar.
+
 ## 📦 Sürüm (Release) APK Alma
 
 Android cihazlar için optimize edilmiş (küçültülmüş ve obfuscate edilmiş) kurulum paketini almak için terminalde şu komutu çalıştırın:

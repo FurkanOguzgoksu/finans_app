@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:finans_app/models/category.dart';
 import 'package:finans_app/providers/category_provider.dart';
 import 'package:finans_app/providers/transaction_provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
 
 /// Kategori Yönetimi Ekranı
 /// Kullanıcı gelir/gider kategorilerini ekleyebilir, düzenleyebilir ve silebilir.
@@ -593,13 +594,39 @@ class CategoryManagementScreen extends StatelessWidget {
   }
 
   void _showDeleteConfirmation(BuildContext context, Category category) {
+    // İşlemi olan kategori veritabanında silinemez (işlemler sessizce
+    // silinmesin diye); kullanıcıya önceden kaç işlem olduğu söylenir.
+    final usageCount = context
+        .read<TransactionProvider>()
+        .transactions
+        .where((tx) => tx.categoryId == category.id)
+        .length;
+    if (usageCount > 0) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Kategori Silinemez'),
+          content: Text(
+            '"${category.name}" kategorisinde $usageCount işlem var.\n\n'
+            'Kategoriyi silmeden önce bu işlemleri başka bir kategoriye taşıyın veya silin.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Tamam'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Kategoriyi Sil'),
         content: Text(
-          '"${category.name}" kategorisini silmek istediğinize emin misiniz?\n\n'
-          'Bu kategoriye ait işlemler de etkilenebilir.',
+          '"${category.name}" kategorisini silmek istediğinize emin misiniz?',
         ),
         actions: [
           TextButton(
@@ -610,15 +637,11 @@ class CategoryManagementScreen extends StatelessWidget {
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () {
               if (category.id != null) {
-                final txProvider = context.read<TransactionProvider>();
                 _runCategoryChange(
                   context,
                   dialogContext: ctx,
-                  action: () async {
-                    await context.read<CategoryProvider>().deleteCategory(category.id!);
-                    // Silinen kategorinin işlemleri de etkilenmiş olabilir
-                    await txProvider.loadTransactions();
-                  },
+                  action: () =>
+                      context.read<CategoryProvider>().deleteCategory(category.id!),
                   successMessage: '"${category.name}" kategorisi silindi',
                   errorMessage: 'Kategori silinemedi.',
                 );
@@ -649,9 +672,13 @@ Future<void> _runCategoryChange(
     messenger.showSnackBar(SnackBar(content: Text(successMessage)));
   } catch (e) {
     debugPrint('Kategori işlemi başarısız: $e');
+    // 23503: kategoriye bağlı işlem var (liste güncel değilken silinmeye çalışıldı)
+    final reason = e is PostgrestException && e.code == '23503'
+        ? 'Bu kategoriye ait işlemler var.'
+        : 'İnternet bağlantınızı kontrol edin.';
     messenger.showSnackBar(
       SnackBar(
-        content: Text('$errorMessage İnternet bağlantınızı kontrol edin.'),
+        content: Text('$errorMessage $reason'),
         backgroundColor: Colors.redAccent,
       ),
     );

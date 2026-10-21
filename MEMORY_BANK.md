@@ -23,7 +23,7 @@
 |---|-------|-------|--------|
 | 1 | Flutter SDK kurulumu ve IDE yapılandırması (VS Code) | ✅ Tamamlandı | Flutter SDK mevcut, VS Code yapılandırılmış |
 | 2 | GitHub repository oluşturulması ve branch stratejisinin belirlenmesi | ✅ Tamamlandı | Git repo başlatıldı, .gitignore mevcut |
-| 3 | pubspec.yaml dosyasına temel bağımlılıkların eklenmesi | ✅ Tamamlandı | sqflite, google_mlkit_text_recognition, fl_chart, go_router, provider, intl, image_picker, shared_preferences, uuid, http, url_launcher eklendi |
+| 3 | pubspec.yaml dosyasına temel bağımlılıkların eklenmesi | ✅ Tamamlandı | sqflite, google_mlkit_text_recognition, fl_chart, go_router, provider, intl, image_picker, shared_preferences, uuid, http, url_launcher eklendi (sqflite, Supabase'e geçişten sonra kaldırıldı) |
 | 4 | Proje klasör yapısının oluşturulması | ✅ Tamamlandı | models/, repositories/, services/, screens/, widgets/, utils/ oluşturuldu |
 
 **Çıktı:** ✅ Ortam hazır, proje repository'si oluşturuldu.
@@ -35,7 +35,7 @@
 | # | Görev | Durum | Notlar |
 |---|-------|-------|--------|
 | 1 | Transaction ve Category model sınıflarının tanımlanması | ✅ Tamamlandı | toMap/fromMap/copyWith metotları ile birlikte |
-| 2 | SQLite tablo şemalarının (CREATE TABLE) tasarlanması | ✅ Tamamlandı | categories, transactions tabloları + varsayılan kategoriler (veriler Hafta 14'te Supabase'e taşındı) |
+| 2 | Veritabanı tablo şemalarının tasarlanması | ✅ Tamamlandı | categories, transactions tabloları + varsayılan kategoriler (ilk sürümde SQLite; Hafta 14'te Supabase'e taşındı, şema: `supabase/schema.sql`) |
 | 3 | Repository pattern arayüzlerinin (abstract class) belirlenmesi | ✅ Tamamlandı | TransactionRepository, CategoryRepository |
 | 4 | Uygulama navigasyon yapısının go_router ile oluşturulması | ✅ Tamamlandı | StatefulShellRoute + 4 tab (Ana Sayfa, İşlemler, İstatistik, Ayarlar) + Fiş Tarama |
 | 5 | Teknik mimari dokümanının hazırlanması | ✅ Tamamlandı | ARCHITECTURE.md oluşturuldu |
@@ -48,15 +48,13 @@
 
 | # | Görev | Durum | Notlar |
 |---|-------|-------|--------|
-| 1 | DatabaseHelper singleton sınıfı ve migration yönetimi | ✅ Tamamlandı | |
-| 2 | TransactionDao: CRUD ve tarih filtreli metotlar | ✅ Tamamlandı | |
-| 3 | CategoryDao: CRUD ve seed data | ✅ Tamamlandı | |
-| 4 | BackupService soyut sınıfı (strateji pattern) | ✅ Tamamlandı | |
-| 5 | JsonBackupService: JSON depolama yedeği | ✅ Tamamlandı | Paylaşım menüsüyle dışa aktarma, dosyadan geri yükleme |
-| 6 | SupabaseBackupService: Supabase bulut yedeği | ✅ Tamamlandı | |
-| 7 | BackupSettingsScreen: JSON veya Supabase yedekleme ayar ekranı | ✅ Tamamlandı | |
-| 8 | BackupProvider: Yedekleme durumunun state'e entegrasyonu | ✅ Tamamlandı | |
-| 9 | flutter_test ile birim testlerinin yazılması | ✅ Tamamlandı | test/services altına testler eklendi |
+| 1 | TransactionDao: CRUD ve tarih filtreli metotlar | ✅ Tamamlandı | |
+| 2 | CategoryDao: CRUD ve seed data | ✅ Tamamlandı | |
+| 3 | BackupService soyut sınıfı (strateji pattern) | ✅ Tamamlandı | |
+| 4 | JsonBackupService: JSON depolama yedeği | ✅ Tamamlandı | Paylaşım menüsüyle dışa aktarma, dosyadan geri yükleme |
+| 5 | BackupSettingsScreen: Yedekleme ayar ekranı | ✅ Tamamlandı | JSON yedek dosyası oluşturma ve geri yükleme |
+| 6 | BackupProvider: Yedekleme durumunun state'e entegrasyonu | ✅ Tamamlandı | |
+| 7 | flutter_test ile birim testlerinin yazılması | ✅ Tamamlandı | test/services altına testler eklendi |
 
 **Çıktı:** ✅ CRUD işlemleri çalışıyor, birim testleri başarılı.
 
@@ -276,9 +274,12 @@
 | 7 | Android/iOS platform düzeltmeleri | ✅ Tamamlandı | Android 12 galeri izni, iOS izin açıklamaları, exact alarm izni kaldırıldı |
 | 8 | OCR/AI tarih doğrulama | ✅ Tamamlandı | `DateHelper` ile geçersiz tarihler reddediliyor |
 | 9 | Kullanılmayan kodun temizlenmesi | ✅ Tamamlandı | Hiçbir yerde kullanılmayan DashboardChart, ReceiptDao, ReceiptRepository ve Receipt modeli kaldırıldı |
-| 10 | Testlerin genişletilmesi | ✅ Tamamlandı | Sahte depo/oturum ile 45 test, hepsi geçiyor |
+| 10 | Supabase şeması ve güvenlik | ✅ Tamamlandı | `supabase/schema.sql`: RLS politikaları, `user_id` varsayılanı, tutar `real` → `numeric`, kategori silme koruması, indeksler |
+| 11 | Supabase 1000 satır sınırı | ✅ Tamamlandı | DAO'lar listeleri `SupabaseService.fetchAllPages` ile sayfa sayfa çekiyor, sorgular `user_id` ile filtreleniyor |
+| 12 | Çalışmayan Supabase yedekleme seçeneğinin kaldırılması | ✅ Tamamlandı | Veriler zaten Supabase'de; SupabaseBackupService ve yalnızca ona hizmet eden yerel SQLite katmanı (DatabaseService, sqflite) kaldırıldı |
+| 13 | Testlerin genişletilmesi | ✅ Tamamlandı | Sahte depo/oturum ile 48 test, hepsi geçiyor |
 
-**Çıktı:** ✅ İncelemede bulunan hatalar düzeltildi, dokümanlar kodla uyumlu hale getirildi.
+**Çıktı:** ✅ İncelemede bulunan hatalar düzeltildi, Supabase şeması repoya eklendi, dokümanlar kodla uyumlu hale getirildi.
 
 ---
 
@@ -299,7 +300,7 @@ Durum Emojileri:
 - **Hafta 9 Kapanış Notları:** Tüm görevler yürütüldü. `lib/models/parsed_receipt.dart` dosyası oluşturularak ayrıştırılmış ocr verisi `ParsedReceipt` modeliyle yapılandırıldı. `lib/services/receipt_parser.dart` oluşturularak "TOPLAM", "ODENEN", "KREDI KARTI" anahtar kelimelerini tanıyıp Türk fişlerindeki Tutar ve Tarihi ayıklayan `parse(String)` RegExp motoru geliştirildi. Eğer direkt bir match bulamazsa en büyük rakamı fiyat olarak alma (fallback) fonksiyonelliği eklendi. `receipt_parser_test.dart` üzerinde yazılan unit testler başarıyla çalışıyor.
 - **Hafta 8 Kapanış Notları:** Tüm planlı görevler tamamlandı. `OcrService` (lib/services/ocr_service.dart) Google ML Kit `TextRecognizer` ile on-device metin tanıma sağlıyor. `OcrProvider` (lib/providers/ocr_provider.dart) enum-tabanlı state machine ile tam akış yönetimi: idle→picking→cropping→processing→done/error. `ReceiptScanScreen` 5 farklı görünüm ile premium UI: gradient arka plan, glassmorphism kartlar, AnimatedSwitcher geçişleri, pulse animasyonu, SelectableText ile metin seçimi ve panoya kopyalama. `image_cropper` dikdörtgen kırpma ile ön işleme. `OcrException` özel hata sınıfı ile kapsamlı error handling. **Not:** google_mlkit_text_recognition sadece Android/iOS destekler, Windows/Web'de çalışmaz.
 - **Hafta 7 Kapanış Notları:** Tüm planlı görevler tamamlandı. Ek olarak: Profil fotoğrafında `permission_handler` ile kamera izin sistemi (kalıcı red yönetimi; galeri sistem fotoğraf seçicisiyle izinsiz açılıyor), `CropStyle.circle` ile yuvarlak kırpma, `InteractiveViewer` ile pinch-to-zoom ekranı, `UCropTheme` ile Android native status bar taşma sorunu düzeldi. `SystemChrome.setSystemUIOverlayStyle` ile tüm uygulamada karanlık/aydınlık moda göre status bar/nav bar rengi otomatik dönüşüyor. Ayarlar ekranında profil avatarinin görünmemesine yol açan `NetworkImage` → `FileImage` bug'u düzeltildi.
-- **Hafta 6 Bildirimi:** Veritabanında (SQLite) sürüm 1'den kalma tabloların boş olması sebebiyle gizli çökmeler yaşanıyordu. SQLite `version: 2`'ye güncellenerek Migration senaryosu uygulandı. Ayrıca uygulamanın yeni yolu (`2.Dönem/finans_app`) ayarlandı. İşlem Ekleme menüsü Kamera/PDF seçenekleriyle zenginleştirildi.
+- **Hafta 6 Bildirimi:** Veritabanında (SQLite) sürüm 1'den kalma tabloların boş olması sebebiyle gizli çökmeler yaşanıyordu. SQLite `version: 2`'ye güncellenerek Migration senaryosu uygulandı (SQLite katmanı, Supabase'e geçişten sonra Ekim 2026'da kaldırıldı). Ayrıca uygulamanın yeni yolu (`2.Dönem/finans_app`) ayarlandı. İşlem Ekleme menüsü Kamera/PDF seçenekleriyle zenginleştirildi.
 
 ---
 
