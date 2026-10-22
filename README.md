@@ -62,3 +62,7 @@ Bu proje, akademik bir çalışmadan çıkarak son kullanıcıya doğrudan fayda
 **Gelecekte Eklenebilecekler:**
 - **Çoklu Para Birimi:** Canlı kur çevirisi ile yurtdışı harcamalarının entegrasyonu.
 - **Paylaşımlı Bütçe:** Aile veya ev arkadaşları için ortak harcama havuzları.
+
+## 📄 Lisans
+
+Bu proje [MIT Lisansı](LICENSE) ile lisanslanmıştır.
