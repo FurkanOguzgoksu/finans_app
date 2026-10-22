@@ -65,4 +65,4 @@ Bu proje, akademik bir çalışmadan çıkarak son kullanıcıya doğrudan fayda
 
 ## 📄 Lisans
 
-Bu proje [MIT Lisansı](LICENSE) ile lisanslanmıştır.
+Bu proje [MIT Lisansı](LICENSE) ile lisanslanmıştır. Türkçe çevirisi için [LICENSE.tr.md](LICENSE.tr.md) dosyasına bakabilirsiniz (bağlayıcı olan İngilizce metindir).
